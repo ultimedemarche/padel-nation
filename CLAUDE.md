@@ -36,7 +36,7 @@ composite indexes are needed.
 On in the real app since 2026-10-31 (`const CREDIT = true` in index.html). Credit section at the bottom of every tab (not a tab): "Not paid yet" list with
 Add to credit per sale (asks the customer name), "+ Add credit" for a typed amount (owner PIN for both),
 Payment (anyone, all or part, cash goes into Cash in drawer and `days/<date>.cashIn`), Copy reminder.
-The WhatsApp report gets a "📒 Credit" block BELOW the cash line, only on days credit was given or paid back:
+The WhatsApp report gets credit lines (no heading) BELOW the cash line, only on days credit was given or paid back:
 "• Name - 10.000 KD" (credit given), "• Name - paid 5.000 KD (still owes …)" (payment).
 The whole section is locked until the owner PIN opens it (`creditOpen`; locks again on Lock or when the app
 goes to the background). A fully paid customer can be removed: `customers/<id>.hidden = true` (records kept,

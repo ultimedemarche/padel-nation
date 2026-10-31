@@ -2355,7 +2355,7 @@ function watchCredit() {
 function creditLines() {
   const today = credits.filter(r => r.date === day);
   if (!today.length) return [];
-  const lines = ["📒 *Credit*"];
+  const lines = [];
   for (const id of [...new Set(today.map(r => r.customer))]) {
     const sum = kind => r3(today.filter(r => r.customer === id && r.kind === kind).reduce((s, r) => s + r.amount, 0));
     const took = sum("took"), paid = sum("paid"), left = balanceOf(id, day);
