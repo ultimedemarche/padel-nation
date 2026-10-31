@@ -562,6 +562,9 @@ table.btable { border-collapse: collapse; width: 100%; font-size: 14px; }
 .set-list { display: grid; gap: 8px; }
 .set-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto; gap: 8px; align-items: center; padding: 10px; border-radius: 16px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); }
 .set-row input[type=text] { height: 40px; min-width: 0; border-radius: 12px; border: 1px solid var(--edge); background: rgba(255,255,255,.07); padding: 0 10px; color: var(--ink); font-size: .9rem; }
+.set-prices { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.set-row input.set-price { width: 82px; text-align: center; font-variant-numeric: tabular-nums; }
+.set-more { width: 40px; height: 40px; border-radius: 12px; border: 1px dashed var(--edge); background: transparent; color: var(--ink); font-size: 1.1rem; }
 .set-opts { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 14px; font-size: .8rem; color: var(--muted); }
 .set-opts label { display: inline-flex; align-items: center; gap: 6px; }
 .set-opts input { width: 18px; height: 18px; accent-color: var(--accent); }
@@ -741,7 +744,7 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
         <div class="cash-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="6.5" width="19" height="11" rx="2"/><circle cx="12" cy="12" r="2.6"/></svg></div>
         <div class="cash-main">
           <label class="cash-label" for="prevCash">Previous cash</label>
-          <div class="cash-in"><input id="prevCash" type="text" inputmode="decimal" autocomplete="off" placeholder="0.000"><span class="cur">KD</span></div>
+          <div class="cash-in"><input id="prevCash" type="text" inputmode="decimal" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="0.000"><span class="cur">KD</span></div>
           <div class="cash-sub" id="prevSub">Carried over from yesterday</div>
           <button class="linkbtn" id="prevReset" type="button" hidden>Use carried-over amount</button>
         </div>
@@ -766,8 +769,8 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
       <div class="cashout">
         <div class="co-head">Take cash out</div>
         <form class="co-form" id="coForm">
-          <input id="coAmt" type="text" inputmode="decimal" autocomplete="off" placeholder="Amount KD" aria-label="Amount taken out in KD">
-          <input id="coNote" type="text" autocomplete="off" placeholder="What for? (optional)" aria-label="What the cash was for">
+          <input id="coAmt" type="text" inputmode="decimal" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="Amount KD" aria-label="Amount taken out in KD">
+          <input id="coNote" type="text" autocomplete="off" autocapitalize="sentences" enterkeyhint="go" placeholder="What for? (optional)" aria-label="What the cash was for">
           <button class="mbtn" type="submit">Take out</button>
         </form>
         <details class="co-log" id="coLog" hidden>
@@ -791,7 +794,7 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
     <h1>Court Daily Income</h1>
     <p>Sign in once on this device. It stays signed in after that.</p>
     <label for="loginEmail">Email</label>
-    <input id="loginEmail" type="email" autocomplete="username" inputmode="email" required>
+    <input id="loginEmail" type="email" autocomplete="username" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false" required>
     <label for="loginPass">Password</label>
     <input id="loginPass" type="password" autocomplete="current-password" required>
     <button class="mbtn" id="loginBtn" type="submit">Sign in</button>
@@ -811,7 +814,7 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
       <button class="mbtn qbtn" id="pickPlus" aria-label="More">+</button>
     </div>
     <form class="pick-other" id="pickOther">
-      <input id="pickAmt" type="text" inputmode="decimal" placeholder="Other amount" autocomplete="off" aria-label="Other amount in KD">
+      <input id="pickAmt" type="text" inputmode="decimal" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" placeholder="Other amount" autocomplete="off" aria-label="Other amount in KD">
       <button class="mbtn" type="submit">Add</button>
     </form>
     <ul class="pick-list num" id="pickList"></ul>
@@ -823,7 +826,7 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   <form class="confirm-card pick glass pin-card" id="pinForm" role="dialog" aria-modal="true" aria-labelledby="pinTitle">
     <h2 id="pinTitle">Owner PIN</h2>
     <p id="pinSub"></p>
-    <input id="pinInput" type="password" inputmode="numeric" autocomplete="off" maxlength="8" aria-label="PIN">
+    <input id="pinInput" type="password" inputmode="numeric" pattern="[0-9]*" autocorrect="off" enterkeyhint="done" autocomplete="off" maxlength="8" aria-label="PIN">
     <p class="pin-err" id="pinErr" role="alert"></p>
     <div class="confirm-actions">
       <button class="mbtn keep" id="pinCancel" type="button">Cancel</button>
@@ -839,14 +842,14 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
       <button class="bdel" id="setClose" type="button" aria-label="Close settings">×</button>
     </div>
     <h3 class="set-sec">Items and prices</h3>
-    <p class="set-help">Prices in KD, separated by commas. The order here is the order of the cards and table columns.</p>
+    <p class="set-help">Prices in KD, one per box. Tap + for another price; empty a box to remove that price. The order here is the order of the cards and table columns.</p>
     <div class="set-list" id="setList"></div>
     <button class="mbtn set-add" id="setAdd" type="button">+ Add item</button>
     <h3 class="set-sec">Owner PIN</h3>
     <p class="set-help" id="pinState"></p>
     <div class="set-pin">
-      <input id="pinNew" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8" placeholder="New PIN" aria-label="New PIN">
-      <input id="pinNew2" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8" placeholder="Repeat PIN" aria-label="Repeat new PIN">
+      <input id="pinNew" type="password" inputmode="numeric" pattern="[0-9]*" autocorrect="off" autocomplete="new-password" maxlength="8" placeholder="New PIN" aria-label="New PIN">
+      <input id="pinNew2" type="password" inputmode="numeric" pattern="[0-9]*" autocorrect="off" autocomplete="new-password" maxlength="8" placeholder="Repeat PIN" aria-label="Repeat new PIN">
     </div>
     <h3 class="set-sec">App</h3>
     <p class="set-help">Loads the newest version of the app. Your sales and settings stay as they are.</p>
@@ -1058,7 +1061,7 @@ function buildSheet(rows) {
       const td = tr.insertCell();
       const inp = document.createElement("input");
       inp.className = "amt"; inp.id = "a-" + c + "-" + r;
-      inp.type = "text"; inp.inputMode = "decimal"; inp.autocomplete = "off";
+      numberBox(inp); inp.setAttribute("enterkeyhint", "next");
       inp.dataset.c = c; inp.dataset.r = r;
       inp.setAttribute("aria-label", n + " row " + (r + 1) + " amount");
       inp.readOnly = !editable;
@@ -1488,11 +1491,17 @@ function renderHints() {
   $("hintCourt").hidden = !staff || hintSeen("court");
 }
 
+// Number boxes: the number keyboard with a Done key, no autocorrect or capital letters.
+function numberBox(el) {
+  el.type = "text"; el.inputMode = "decimal"; el.autocomplete = "off";
+  el.setAttribute("enterkeyhint", "done"); el.setAttribute("autocorrect", "off"); el.setAttribute("autocapitalize", "off"); el.spellcheck = false;
+}
+
 // ---- Settings (owner) ----
 let draft = null;
 async function openSettings() {
   if (!(await ownerCheck("Settings", "Enter the owner PIN to change items and prices."))) return;
-  draft = cfg.products.map(p => ({ name: p.name, prices: (p.prices || []).join(", "), noQty: !!p.noQty, perPrice: !!p.perPrice }));
+  draft = cfg.products.map(p => ({ name: p.name, prices: (p.prices || []).map(String), noQty: !!p.noQty, perPrice: !!p.perPrice }));
   $("pinNew").value = $("pinNew2").value = ""; $("setErr").textContent = "";
   $("pinState").textContent = cfg.pinHash ? "A PIN is set. Fill these in only to change it." : "No PIN yet. Set one so Settings and past-day corrections are protected.";
   renderSettings();
@@ -1506,9 +1515,20 @@ function renderSettings() {
   draft.forEach((p, i) => {
     const row = mk("div", "set-row");
     const name = mk("input"); name.type = "text"; name.value = p.name; name.placeholder = "Item name"; name.setAttribute("aria-label", "Item name");
+    name.autocapitalize = "words"; name.setAttribute("autocorrect", "off"); name.spellcheck = false;
     name.oninput = () => { p.name = name.value; };
-    const prices = mk("input", "set-prices"); prices.type = "text"; prices.inputMode = "decimal"; prices.value = p.prices; prices.placeholder = "Prices, like 0.250, 0.500"; prices.setAttribute("aria-label", "Prices for " + (p.name || "item"));
-    prices.oninput = () => { p.prices = prices.value; };
+    // One small box per price, so the number pad (which has no comma) is all that is needed.
+    const prices = mk("div", "set-prices");
+    if (!p.prices.length) p.prices.push("");
+    p.prices.forEach((v, j) => {
+      const box = mk("input", "set-price"); numberBox(box);
+      box.value = v; box.placeholder = "0.000"; box.setAttribute("aria-label", "Price " + (j + 1) + " for " + (p.name || "item"));
+      box.oninput = () => { p.prices[j] = box.value; };
+      prices.append(box);
+    });
+    const more = mk("button", "set-more", "+"); more.type = "button"; more.setAttribute("aria-label", "Add another price for " + (p.name || "item"));
+    more.onclick = () => { p.prices.push(""); renderSettings(); const boxes = $("setList").querySelectorAll(".set-row")[i].querySelectorAll(".set-price"); boxes[boxes.length - 1].focus(); };
+    prices.append(more);
     const move = mk("div", "set-move");
     const up = mk("button", "", "↑"); up.type = "button"; up.disabled = i === 0; up.setAttribute("aria-label", "Move up");
     up.onclick = () => { [draft[i - 1], draft[i]] = [draft[i], draft[i - 1]]; renderSettings(); };
@@ -1532,7 +1552,7 @@ async function saveSettings() {
     const name = p.name.trim();
     if (!name) { err.textContent = "Every item needs a name."; return; }
     if (products.some(x => x.name.toLowerCase() === name.toLowerCase())) { err.textContent = "Two items are called " + name + "."; return; }
-    const prices = p.prices.split(",").map(s => s.trim()).filter(Boolean).map(s => parseFloat(s.replace(",", ".")));
+    const prices = p.prices.map(s => String(s).trim()).filter(Boolean).map(s => parseFloat(s.replace(",", ".")));
     if (prices.some(n => !(n > 0))) { err.textContent = "Check the prices for " + name + ": numbers only, like 0.250."; return; }
     const item = { name, prices: prices.map(r3) };
     if (p.noQty) item.noQty = true;
@@ -1645,6 +1665,7 @@ function bookingCard(b) {
 
   const head = mk("header", "bhead");
   const name = mk("input", "bname");
+  name.autocapitalize = "words"; name.setAttribute("autocorrect", "off"); name.spellcheck = false; name.setAttribute("enterkeyhint", "done");
   name.dataset.bid = b.id; name.value = b.name || ""; name.placeholder = "Booking name";
   name.setAttribute("aria-label", "Booking name"); name.autocomplete = "off"; name.readOnly = !editable;
   name.addEventListener("change", () => saveName(b, name.value.trim()));
@@ -2021,7 +2042,7 @@ function renderPrices() {
         // Any other court amount, typed by hand.
         const f = mk("form", "pc-custom");
         const inp = mk("input");
-        inp.type = "text"; inp.inputMode = "decimal"; inp.autocomplete = "off";
+        numberBox(inp); inp.setAttribute("enterkeyhint", "go");
         inp.placeholder = "Custom amount KD"; inp.id = "courtCustom";
         inp.setAttribute("aria-label", "Custom court amount in KD");
         inp.disabled = !editable;
@@ -2339,7 +2360,7 @@ $("reloadApp").onclick = async () => {
   } catch (_) {}
   location.reload();
 };
-$("setAdd").onclick = () => { draft.push({ name: "", prices: "", noQty: false, perPrice: false }); renderSettings(); const inputs = $("setList").querySelectorAll(".set-row input[type=text]"); inputs[inputs.length - 2].focus(); };
+$("setAdd").onclick = () => { draft.push({ name: "", prices: [""], noQty: false, perPrice: false }); renderSettings(); const rows = $("setList").querySelectorAll(".set-row"); rows[rows.length - 1].querySelector("input").focus(); };
 for (const b of document.querySelectorAll("[data-hint]")) b.onclick = () => { try { localStorage.setItem("hint-" + b.dataset.hint, "1"); } catch (_) {} renderHints(); };
 $("splitPop").onclick = ev => { if (ev.target === $("splitPop")) closeSplit(); };
 
