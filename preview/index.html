@@ -606,6 +606,17 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 <link rel="stylesheet" href="theme.css">
 </head>
 <body>
+<div class="bgvid" aria-hidden="true">
+  <video id="bgVideo" autoplay muted loop playsinline preload="auto" poster="bg.jpg"><source src="bg.mp4" type="video/mp4"></video>
+</div>
+<script>
+// Keep the background still for people who turned on Reduce Motion, and pause it while the app is hidden.
+(() => {
+  const v = document.getElementById("bgVideo");
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) { v.removeAttribute("autoplay"); v.pause(); return; }
+  document.addEventListener("visibilitychange", () => { if (document.hidden) v.pause(); else v.play().catch(() => {}); });
+})();
+</script>
 <div class="aurora" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
 
 <header class="top">
@@ -2356,6 +2367,5 @@ render();
 })();
 </script>
 
-<script src="court.js"></script>
 </body>
 </html>

@@ -39,7 +39,21 @@ swap("</head>", `<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="theme.css">
 </head>`);
-swap("</body>", '<script src="court.js"></script>\n</body>');
+// Background: the padel video, already blurred and darkened (bg.mp4, made with ffmpeg; see theme.css).
+// court.js (the drawn court and ball) stays in this folder as the other option.
+swap("<body>\n", `<body>
+<div class="bgvid" aria-hidden="true">
+  <video id="bgVideo" autoplay muted loop playsinline preload="auto" poster="bg.jpg"><source src="bg.mp4" type="video/mp4"></video>
+</div>
+<script>
+// Keep the background still for people who turned on Reduce Motion, and pause it while the app is hidden.
+(() => {
+  const v = document.getElementById("bgVideo");
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) { v.removeAttribute("autoplay"); v.pause(); return; }
+  document.addEventListener("visibilitychange", () => { if (document.hidden) v.pause(); else v.play().catch(() => {}); });
+})();
+</script>
+`);
 
 fs.writeFileSync(path.join(__dirname, "index.html"), s);
 console.log("preview/index.html written");
