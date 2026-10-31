@@ -1249,7 +1249,6 @@ function reportText() {
   const cash = drawerNow();
   const rows = productNames().map(n => repRow(REPORT_NAMES[n] || n, (t.by[n] || {}).total || 0));
   return [
-    "🎾 *PADEL NATION*",
     "📅 _" + longDate(day) + "_",
     "",
     "📊 *Account*",
