@@ -29,7 +29,16 @@ window.claude = {
     : Promise.resolve(null)
 };
 </script>
-<script type="module" src="firebase.js"></script>
+<script>
+// ?demo at the end of the address opens a practice copy with sample data that is never saved
+// (demo.js); otherwise the app connects to the real Firebase data (firebase.js).
+(() => {
+  const s = document.createElement("script");
+  s.type = "module";
+  s.src = new URLSearchParams(location.search).has("demo") ? "demo.js" : "firebase.js";
+  document.head.append(s);
+})();
+</script>
 <script>
 // Saves the app on the device so it still opens with no internet (see sw.js).
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {

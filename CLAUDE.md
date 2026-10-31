@@ -8,6 +8,9 @@ Static site on GitHub Pages; data in Firebase (Firestore + Email/Password login)
 - `firebase.js` — Firebase setup, sign-in screen, and a small adapter that gives the app the
   `db.collection(...).where().orderBy().onSnapshot()` / `db.doc(path).set()` API it was written against.
   The app gets it through `window.claude.use("db")` (a shim in `<head>` of index.html).
+- `demo.js` — loaded instead of firebase.js when the address ends in `?demo`: same database API, in memory,
+  made-up sample data (today + yesterday), no login, acts as the owner, nothing saved. Share
+  https://ultimedemarche.github.io/padel-nation/?demo with testers. It always matches the real app.
 - `import.html` — one-time copy of data exported from the old Claude version (`migration/`, git-ignored).
 - `theme.css` — the look (loaded after index.html's own styles): logo navy/lime/racket green + orange,
   matte working cards, frosted glass on floating parts (header, tabs, pills, lock bar, popups),
