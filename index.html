@@ -1043,7 +1043,8 @@ function productNames() {
 
 // What the Items tab and every total count: walk-in sales, plus Court-tab sales once that player
 // is ticked Paid. Unpaid Court-tab shares stay on the booking card as "Owed" until they're paid.
-const counted = () => entries.filter(e => !e.booking || e.paid);
+// Sales put on credit aren't counted either: they live in the Credit section until the customer pays.
+const counted = () => entries.filter(e => !e.credit && (!e.booking || e.paid));
 
 function totals() {
   const by = {};
@@ -2316,8 +2317,8 @@ function cashButton(on, label, onClick) {
 
 // ---- Customer credit: customers who play now and pay later ----
 // customers/<id> {name}; credit/<id> {customer, kind "took" | "paid", date, amount, ...}.
-// "took": sales of that day put on a customer's account. Those sales stay in the day's totals and are
-// marked {paid: true, credit: <record id>} but never cash. Or a typed amount (an old balance) with a note.
+// "took": sales of that day put on a customer's account. Those sales leave the Items table and the day's
+// totals (counted()) and are marked {paid: true, credit: <record id>} but never cash. Or a typed amount (an old balance) with a note.
 // "paid": money the customer paid back on that day, all or part; cash payments go into the drawer.
 // Only the owner (PIN) puts sales on credit or removes a record; anyone can record a payment.
 let customers = [], credits = [], creditLoaded = false;

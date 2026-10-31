@@ -33,7 +33,8 @@ composite indexes are needed.
 
 - `customers` — {name, at, by}. `credit` — {customer, kind "took" | "paid", date, amount, at, by};
   "took" has `entries` (sale ids) + `items` (labels), or a typed amount with `note`; "paid" has `cash`.
-  Sales put on credit get {paid: true, cash: false, credit: <credit id>} and can only be changed from the Credit tab.
+  Sales put on credit get {paid: true, cash: false, credit: <credit id>} and can only be changed from the Credit section.
+  They are left out of the Items table, every total and the report TOTAL (`counted()`); only paid sales count there.
 
 ## Customer credit (TEST: on only with ?demo)
 `const CREDIT` in index.html switches it on; it is true only in the demo until the owner approves it for the
