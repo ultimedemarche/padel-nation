@@ -1,0 +1,4 @@
+# Business data exported from the Claude version: never put it on GitHub.
+migration/
+# Local test-server settings for Claude.
+.claude/
