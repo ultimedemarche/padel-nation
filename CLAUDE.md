@@ -23,6 +23,16 @@ Static site on GitHub Pages; data in Firebase (Firestore + Email/Password login)
 Queries that filter one field and sort another are sorted on the device (firebase.js) so no
 composite indexes are needed.
 
+## People, Settings, locking
+- Owner = `crowly@padelnation.app` (const OWNER in index.html, and in the Firestore rules). Other logins are
+  staff, added in Firebase → Authentication → Users. Every new record stores `by` (login email).
+- ⚙️ Settings (owner login only) edits `config/main.products` and the owner PIN (`config/main.pinHash`,
+  SHA-256 of "padel-nation:" + PIN). Asks for the PIN when one is set.
+- Past days are read-only (lock bar); unlocking needs the owner PIN (or the owner login if no PIN yet).
+- Staff logins see dismissible tips; the owner's login never does.
+- `sw.js` keeps the app openable offline (own files network-first, Firebase SDK cache-first). The top-bar
+  "Saved" pill counts unsettled writes in firebase.js.
+
 ## The owner's preferences (keep these)
 - Currency KD with 3 decimals. New sales start unticked; Paid and Cash marks are independent.
 - Items tab: don't change it when asked for Court-tab changes.

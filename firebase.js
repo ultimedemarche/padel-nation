@@ -38,6 +38,18 @@ const mapError = e => ({
 });
 const guard = async fn => { try { return await fn(); } catch (e) { throw mapError(e); } };
 
+// ---- Saved / offline status ----
+// A write's promise settles once the server has it, so counting unsettled writes tells us whether
+// everything is safely in the cloud. While offline they wait on the iPad and sync later.
+let pending = 0;
+const tellSync = () => window.dispatchEvent(new CustomEvent("syncstate", { detail: { pending, online: navigator.onLine } }));
+const write = fn => {
+  pending++; tellSync();
+  return guard(fn).finally(() => { pending--; tellSync(); });
+};
+window.addEventListener("online", tellSync);
+window.addEventListener("offline", tellSync);
+
 // ---- Snapshots ----
 const wrapDoc = s => ({ id: s.id, exists: s.exists(), data: () => s.data(), metadata: s.metadata });
 const cmp = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
@@ -85,9 +97,9 @@ function docRef(path) {
     id: ref.id,
     path,
     get: () => guard(async () => wrapDoc(await getDoc(ref))),
-    set: data => guard(() => setDoc(ref, data)),
-    update: data => guard(() => updateDoc(ref, data)),
-    delete: () => guard(() => deleteDoc(ref)),
+    set: data => write(() => setDoc(ref, data)),
+    update: data => write(() => updateDoc(ref, data)),
+    delete: () => write(() => deleteDoc(ref)),
     onSnapshot: (cb, err) => onSnapshot(ref, s => cb(wrapDoc(s)), e => err && err(mapError(e))),
     collection: sub => collRef(path + "/" + sub)
   };
@@ -97,7 +109,8 @@ function collRef(path) {
   return Object.assign(makeQuery(path, { filters: [], order: null, lim: null }), {
     path,
     doc: id => docRef(id ? path + "/" + id : doc(collection(fs, path)).path),
-    add: data => guard(async () => { const r = await addDoc(collection(fs, path), data); return docRef(r.path); })
+    // The new document's id is known straight away, so callers don't wait for the server (works offline).
+    add: async data => { const r = doc(collection(fs, path)); write(() => setDoc(r, data)).catch(e => window.dispatchEvent(new CustomEvent("writeerror", { detail: e }))); return docRef(r.path); }
   });
 }
 
@@ -113,7 +126,8 @@ onAuthStateChanged(auth, user => {
     login.hidden = true;
     $("whoami").textContent = "Signed in as " + user.email;
     $("signFoot").hidden = false;
-    if (!handedOver) { handedOver = true; window.__resolveDb(db); }
+    window.__user = { email: (user.email || "").toLowerCase() };
+    if (!handedOver) { handedOver = true; window.__resolveDb(db); tellSync(); }
   } else {
     login.hidden = false;
     $("signFoot").hidden = true;

@@ -30,6 +30,12 @@ window.claude = {
 };
 </script>
 <script type="module" src="firebase.js"></script>
+<script>
+// Saves the app on the device so it still opens with no internet (see sw.js).
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+  addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&display=swap">
@@ -229,6 +235,7 @@ main .wrap { display: grid; gap: 22px; padding-block: 20px 48px; }
 .prow > .mbtn .cur { font-size: .7rem; opacity: .7; margin-left: 4px; letter-spacing: .06em; }
 .prow > .mbtn .each { display: block; font-size: .66rem; font-weight: 500; opacity: .75; letter-spacing: .03em; line-height: 1; margin-bottom: 2px; }
 .prow .qty { padding: 0; gap: 6px; }
+.prow > .mbtn:disabled { opacity: .5; cursor: default; }
 .prow .qbtn { width: 34px; height: 34px; }
 .qty { display: flex; align-items: center; gap: 6px; padding: 0 12px 10px; }
 .qlabel { font-family: var(--font-btn); font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-right: auto; }
@@ -493,6 +500,66 @@ table.btable { border-collapse: collapse; width: 100%; font-size: 14px; }
 .signfoot { position: relative; z-index: 1; display: flex; justify-content: center; align-items: center; gap: 10px; padding: 0 16px 28px; color: var(--muted); font-size: .8rem; }
 .signfoot[hidden] { display: none; }
 
+/* Settings gear (owner only). */
+.datenav .mbtn.gear { padding: 0; }
+.gear svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+
+/* Saved / offline indicator beside the clock. */
+.sync { display: inline-flex; align-items: center; gap: 8px; min-height: 52px; padding: 0 16px; border-radius: 22px; font-family: var(--font-btn); font-size: .82rem; font-weight: 600; color: var(--muted); white-space: nowrap; }
+.sync .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); box-shadow: 0 0 0 3px rgba(255,255,255,.08); }
+.sync.ok .dot { background: #35f0a6; box-shadow: 0 0 10px rgba(53,240,166,.7); }
+.sync.ok { color: #b8ffe0; }
+.sync.busy .dot { background: #ffd34d; animation: blink 1s ease-in-out infinite; }
+.sync.busy { color: #ffe9a8; }
+.sync.off .dot { background: #ff9a76; box-shadow: 0 0 10px rgba(255,154,118,.7); }
+.sync.off { color: #ffd2c2; border-color: rgba(255,154,118,.5); }
+@keyframes blink { 50% { opacity: .35; } }
+
+/* Locked past day bar. */
+.lockbar { display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 16px; border-radius: 18px; border-color: rgba(255,211,77,.45); background: linear-gradient(135deg, rgba(255,211,77,.18), rgba(255,174,43,.08)); }
+.lockbar.open { border-color: rgba(94,242,184,.5); background: linear-gradient(135deg, rgba(53,240,166,.18), rgba(34,195,230,.08)); }
+.lockicon { font-size: 1.2rem; }
+.locktext { flex: 1; min-width: 0; font-size: .9rem; }
+.lockbar .mbtn { min-height: 40px; border-radius: 999px; padding: 0 16px; font-size: .85rem; }
+
+/* Tips for staff logins (never shown on the owner's login). */
+.hint { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border-radius: 18px; font-size: .9rem; line-height: 1.5; border-color: rgba(138,107,255,.45); background: linear-gradient(135deg, rgba(138,107,255,.22), rgba(34,195,230,.1)); }
+.hint > div { flex: 1; min-width: 0; }
+.hint-ico { font-size: 1.3rem; line-height: 1.2; }
+.hint .linkbtn { white-space: nowrap; }
+
+/* PIN box and Settings screen. */
+.pin-card input { height: 54px; border-radius: 16px; border: 1px solid var(--edge); background: rgba(255,255,255,.08); color: var(--ink); text-align: center; font-family: var(--font-btn); font-size: 1.6rem; letter-spacing: .5em; padding: 0 0 0 .5em; }
+.pin-card input:focus, .set-card input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.pin-err { margin: 0; min-height: 1.2em; color: var(--warn); font-size: .88rem; text-align: center; }
+.set-card { width: min(640px, 100%); text-align: left; gap: 10px; max-height: calc(100vh - 48px); overflow-y: auto; }
+.set-head { display: flex; align-items: center; justify-content: space-between; }
+.set-head h2 { font-size: 1.3rem; }
+.set-sec { margin: 8px 0 0; font-family: var(--font-btn); font-size: .95rem; }
+.set-help { margin: 0; font-size: .82rem; color: var(--muted); }
+.set-list { display: grid; gap: 8px; }
+.set-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto; gap: 8px; align-items: center; padding: 10px; border-radius: 16px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); }
+.set-row input[type=text] { height: 40px; min-width: 0; border-radius: 12px; border: 1px solid var(--edge); background: rgba(255,255,255,.07); padding: 0 10px; color: var(--ink); font-size: .9rem; }
+.set-opts { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 14px; font-size: .8rem; color: var(--muted); }
+.set-opts label { display: inline-flex; align-items: center; gap: 6px; }
+.set-opts input { width: 18px; height: 18px; accent-color: var(--accent); }
+.set-move { display: flex; gap: 4px; }
+.set-move button { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--edge); background: rgba(255,255,255,.06); color: var(--ink); font-size: .9rem; }
+.set-move button:disabled { opacity: .3; }
+.set-add { min-height: 42px; border-radius: 999px; justify-self: start; padding: 0 18px; }
+.set-pin { display: flex; gap: 8px; }
+.set-pin input { flex: 1; min-width: 0; height: 44px; border-radius: 12px; border: 1px solid var(--edge); background: rgba(255,255,255,.07); color: var(--ink); padding: 0 12px; font-size: 1rem; }
+@media (max-width: 600px) { .set-row { grid-template-columns: minmax(0, 1fr) auto; } .set-row .set-prices { grid-column: 1 / -1; grid-row: 2; } .set-pin { flex-direction: column; } }
+
+/* Little celebration when a booking is fully paid. */
+.bcard { position: relative; }
+.burst { position: absolute; inset: 0; pointer-events: none; overflow: hidden; border-radius: inherit; }
+.burst i { position: absolute; top: 40%; left: 50%; width: 8px; height: 8px; border-radius: 2px; opacity: 0; animation: pop-out 1.1s cubic-bezier(.2,.7,.3,1) forwards; }
+@keyframes pop-out { 0% { opacity: 1; transform: translate(0, 0) rotate(0); } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); } }
+.bcard.paidglow { animation: paidglow 1.4s ease; }
+@keyframes paidglow { 0%, 100% { box-shadow: inset 0 1px 0 var(--edge-hi), 0 18px 40px rgba(0,0,0,.35); } 30% { box-shadow: inset 0 1px 0 var(--edge-hi), 0 0 0 3px rgba(53,240,166,.6), 0 0 40px rgba(53,240,166,.45); } }
+@media (prefers-reduced-motion: reduce) { .burst { display: none; } .bcard.paidglow, .sync.busy .dot { animation: none; } }
+
 /* ---- Fitting every phone and tablet ----
    Phones: header date controls get their own full-width row, tabs and tools stretch to the width,
    booking cards keep their table scrolling inside the card, the cash section goes to one column.
@@ -511,6 +578,8 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   .tools { width: 100%; margin-left: 0; gap: 10px; flex-wrap: nowrap; }
   .wa { flex: 1; justify-content: center; min-height: 48px; padding: 0 14px; }
   .clock { padding: 8px 14px 10px; }
+  .tools { flex-wrap: wrap; }
+  .sync { order: 3; flex: 1 1 100%; justify-content: center; min-height: 40px; }
   .clock .ch { font-size: 1.6rem; }
   .bname { flex: 1 1 100%; order: -1; }
   .btime { margin-right: auto; }
@@ -552,6 +621,7 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
       <input type="date" id="dayPick" aria-label="Choose day">
       <button id="nextDay" class="mbtn" aria-label="Next day">›</button>
       <button id="todayBtn" class="mbtn today">Today</button>
+      <button id="gearBtn" class="mbtn gear" type="button" aria-label="Settings" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg></button>
     </div>
   </div></div>
 </header>
@@ -567,6 +637,12 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
     <div class="notice glass" id="notice" hidden></div>
 
+    <div class="lockbar glass" id="lockbar" hidden>
+      <span class="lockicon" id="lockIcon" aria-hidden="true">🔒</span>
+      <span class="locktext" id="lockText"></span>
+      <button class="mbtn" id="lockBtn" type="button"></button>
+    </div>
+
     <div class="tabrow">
     <nav class="tabs glass" role="tablist" aria-label="Sheets">
       <button class="tab" role="tab" data-tab="court1" id="tab-court1">Court 1<span class="tcount num" id="tabCount1"></span></button>
@@ -574,6 +650,7 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
       <button class="tab" role="tab" data-tab="items" id="tab-items">Items</button>
     </nav>
     <div class="tools">
+    <div class="sync glass" id="sync" role="status" aria-live="polite"><span class="dot"></span><span id="syncText">Connecting…</span></div>
     <button class="wa glass" id="waBtn" type="button" aria-label="Daily report for WhatsApp">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.2a9.7 9.7 0 0 0-8.4 14.6L2.3 21.7l5-1.3A9.7 9.7 0 1 0 12 2.2Zm0 17.7a8 8 0 0 1-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1 1 12 19.9Zm4.4-6c-.2-.1-1.4-.7-1.7-.8-.2-.1-.4-.1-.5.1l-.8.9c-.1.2-.3.2-.5.1a6.5 6.5 0 0 1-3.2-2.8c-.2-.4.2-.4.7-1.2.1-.1 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.5-.4h-.5a.9.9 0 0 0-.6.3 2.7 2.7 0 0 0-.9 2c0 1.2.9 2.4 1 2.5.1.2 1.7 2.6 4.2 3.7 1.6.7 2.2.7 3 .6.5-.1 1.4-.6 1.6-1.2.2-.6.2-1 .1-1.2l-.4-.3Z"/></svg>
       <span>Daily report</span>
@@ -585,6 +662,11 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
     </div>
 
     <section class="sheet-block" id="courtView" hidden>
+      <div class="hint glass" id="hintCourt" hidden>
+        <span class="hint-ico" aria-hidden="true">💡</span>
+        <div><b>How bookings work</b><br>1. Tap <b>+ New booking</b> and type the name. 2. Tap a player’s cell to add the court share or a drink. 3. When a player pays, switch on <b>Paid</b> under their name, and tap 💵 if it was cash. Only paid amounts go to the Items tab.</div>
+        <button class="linkbtn" data-hint="court" type="button">Got it</button>
+      </div>
       <div class="court-head">
         <div class="court-intro">
           <h2 class="sec-title" id="courtTitle">Court 1</h2>
@@ -599,6 +681,11 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
     </section>
 
     <div class="view" id="itemsView">
+    <div class="hint glass" id="hintItems" hidden>
+      <span class="hint-ico" aria-hidden="true">💡</span>
+      <div><b>Quick start</b><br>Tap a price to add a sale (use <b>+</b> first for more than one). Tick the box in the table when it’s paid, then tap 💵 if it was cash. Anything taken from the drawer goes under <b>Take cash out</b>.</div>
+      <button class="linkbtn" data-hint="items" type="button">Got it</button>
+    </div>
     <section class="sheet-block" aria-labelledby="priceTitle">
       <h2 class="sec-title" id="priceTitle">Price list</h2>
       <p class="sheet-hint">Tap a price to add it to the next empty row of that item in the table.</p>
@@ -694,6 +781,43 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   </div>
 </div>
 
+<div class="confirm pop" id="pinPop" hidden>
+  <form class="confirm-card pick glass pin-card" id="pinForm" role="dialog" aria-modal="true" aria-labelledby="pinTitle">
+    <h2 id="pinTitle">Owner PIN</h2>
+    <p id="pinSub"></p>
+    <input id="pinInput" type="password" inputmode="numeric" autocomplete="off" maxlength="8" aria-label="PIN">
+    <p class="pin-err" id="pinErr" role="alert"></p>
+    <div class="confirm-actions">
+      <button class="mbtn keep" id="pinCancel" type="button">Cancel</button>
+      <button class="mbtn" id="pinOk" type="submit">OK</button>
+    </div>
+  </form>
+</div>
+
+<div class="confirm pop" id="setPop" hidden>
+  <div class="confirm-card glass set-card" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+    <div class="set-head">
+      <h2 id="setTitle">Settings</h2>
+      <button class="bdel" id="setClose" type="button" aria-label="Close settings">×</button>
+    </div>
+    <h3 class="set-sec">Items and prices</h3>
+    <p class="set-help">Prices in KD, separated by commas. The order here is the order of the cards and table columns.</p>
+    <div class="set-list" id="setList"></div>
+    <button class="mbtn set-add" id="setAdd" type="button">+ Add item</button>
+    <h3 class="set-sec">Owner PIN</h3>
+    <p class="set-help" id="pinState"></p>
+    <div class="set-pin">
+      <input id="pinNew" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8" placeholder="New PIN" aria-label="New PIN">
+      <input id="pinNew2" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8" placeholder="Repeat PIN" aria-label="Repeat new PIN">
+    </div>
+    <p class="pin-err" id="setErr" role="alert"></p>
+    <div class="confirm-actions">
+      <button class="mbtn keep" id="setCancel" type="button">Cancel</button>
+      <button class="mbtn" id="setSave" type="button">Save</button>
+    </div>
+  </div>
+</div>
+
 <div class="confirm pop" id="reportPop" hidden>
   <div class="confirm-card pick glass" role="dialog" aria-modal="true" aria-labelledby="repTitle">
     <h2 id="repTitle">Daily report</h2>
@@ -748,7 +872,23 @@ let cfg = DEFAULTS;
 let entries = [];
 let db = null;
 let unsubDay = null;
+// canWrite = allowed to change this day right now: signed-in permission (permOK) and the day isn't locked.
+let permOK = true;
 let canWrite = true;
+const unlockedDays = new Set();
+
+// ---- People ----
+// The owner's login gets Settings, no hints, and can unlock past days without asking anyone.
+const OWNER = "crowly@padelnation.app";
+const me = () => (window.__user && window.__user.email) || "";
+const isOwner = () => me() === OWNER;
+// A short name for "who added this": the part of the login email before the @, capitalised.
+const who = email => email ? email.split("@")[0].replace(/^./, c => c.toUpperCase()) : "";
+
+// ---- Past days are locked ----
+// Yesterday and earlier are read-only once the day is over; the owner PIN unlocks one day at a time.
+const todayIso = () => iso(new Date());
+const dayLocked = () => day < todayIso() && !unlockedDays.has(day);
 let loaded = false;
 let sheetSig = "";
 let priceSig = "";
@@ -951,6 +1091,9 @@ function renderSheet(t) {
       // A booking's combined amount is changed per player on its Court tab, so it's read-only here.
       inp.readOnly = !(canWrite && loaded) || !!(e && e.group);
       inp.parentElement.classList.toggle("grp", !!(e && e.group));
+      // Hold a finger on (or hover) a filled cell to see who added it.
+      const by = e ? (e.group ? [...new Set(e.members.map(m => who(m.by)).filter(Boolean))].join(", ") : who(e.by)) : "";
+      inp.parentElement.title = by ? "Added by " + by : "";
       if (document.activeElement !== inp) { inp.value = e ? kd(e.amount) : ""; inp.classList.remove("bad"); }
       cb.dataset.id = e ? e.id : "";
       cb.checked = !!(e && e.paid);
@@ -969,18 +1112,22 @@ function renderSheet(t) {
     $("tc-" + c).textContent = cells ? cells : "";
     $("u-" + c).textContent = p.unpaid ? kd(p.unpaid) : "";
   });
-  $("grand").textContent = kd(t.final) + " KD";
+  countTo($("grand"), t.final, n => kd(n) + " KD");
 }
 
 function render() {
+  canWrite = permOK && !dayLocked();
   const t = totals();
   $("brand").firstChild.nodeValue = cfg.business;
   $("dayLabel").textContent = longDate(day) + (day === iso(new Date()) ? " · Today" : "");
   $("dayPick").value = day;
-  $("sFinal").textContent = kd(t.final);
-  $("sPaid").textContent = kd(t.paid);
-  $("sUnpaid").textContent = kd(t.unpaid);
-  $("sCount").textContent = itemRows().length;
+  countTo($("sFinal"), t.final);
+  countTo($("sPaid"), t.paid);
+  countTo($("sUnpaid"), t.unpaid);
+  countTo($("sCount"), itemRows().length, n => String(Math.round(n)));
+  renderLock();
+  renderHints();
+  $("gearBtn").hidden = !isOwner();
   renderTabs();
   renderPrices();
   renderSheet(t);
@@ -1063,7 +1210,7 @@ async function addCashOut(ev) {
   if (!db) return;
   const note = $("coNote").value.trim().slice(0, 80);
   try {
-    await db.collection("cashouts").add({ date: day, amount: r3(v), note, at: Date.now() });
+    await db.collection("cashouts").add({ date: day, amount: r3(v), note, at: Date.now(), by: me() });
     $("coAmt").value = ""; $("coNote").value = "";
     $("coAmt").blur(); $("coNote").blur();
     renderCashCounter();
@@ -1177,15 +1324,15 @@ function renderCashCounter() {
   const total = r3(rows.reduce((s, r) => s + r.amount, 0));
   const outTotal = r3(cashouts.reduce((s, o) => s + o.amount, 0));
   const prevVal = effectivePrev();
-  $("cashTotal").textContent = kd(total);
-  $("outTotal").textContent = kd(outTotal);
+  countTo($("cashTotal"), total);
+  countTo($("outTotal"), outTotal);
   $("outCount").textContent = cashouts.length ? cashouts.length + " time" + (cashouts.length > 1 ? "s" : "") : "Nothing taken out";
   const prev = $("prevCash");
   prev.disabled = !editable;
   if (document.activeElement !== prev) prev.value = prevCash == null && !carry ? "" : kd(prevVal);
   $("prevSub").textContent = prevCash != null ? "Set by hand for this day" : !carry ? "Working it out…" : carry.failed ? "Couldn't carry over. Type it in" : "Carried over from yesterday";
   $("prevReset").hidden = prevCash == null || !editable;
-  $("cashAll").textContent = kd(prevVal + total - outTotal);
+  countTo($("cashAll"), prevVal + total - outTotal);
 
   $("coAmt").disabled = $("coNote").disabled = !editable;
   $("coLog").hidden = !cashouts.length;
@@ -1195,6 +1342,7 @@ function renderCashCounter() {
   for (const o of cashouts) {
     const li = mk("li");
     const what = mk("span", "co-what", coLabel(o));
+    if (o.by) what.append(mk("span", "co-note", " · " + who(o.by)));
     li.append(what, mk("span", "co-time", new Date(o.at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })), mk("span", "co-amt", "−" + kd(o.amount)));
     const x = mk("button", "bdel", "×");
     x.setAttribute("aria-label", "Remove " + coLabel(o) + " " + kd(o.amount) + " KD");
@@ -1212,6 +1360,180 @@ function renderCashCounter() {
     const chip = mk("span"); chip.append(mk("b", "", n), document.createTextNode(kd(s)));
     by.append(chip);
   }
+}
+
+// ---- Numbers that count up to their new value ----
+const stillMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function countTo(el, value, fmt = kd) {
+  const from = typeof el.__v === "number" ? el.__v : null;
+  el.__v = value;
+  if (from === null || from === value || stillMotion || document.hidden) { el.textContent = fmt(value); return; }
+  cancelAnimationFrame(el.__raf);
+  const start = performance.now(), dur = 450;
+  const step = now => {
+    const k = Math.min(1, (now - start) / dur), ease = 1 - Math.pow(1 - k, 3);
+    el.textContent = fmt(from + (value - from) * ease);
+    if (k < 1) el.__raf = requestAnimationFrame(step);
+  };
+  el.__raf = requestAnimationFrame(step);
+}
+
+// ---- Saved / offline indicator ----
+function showSync(pending, online) {
+  const el = $("sync");
+  el.classList.remove("ok", "busy", "off");
+  if (!db) { $("syncText").textContent = "Connecting…"; return; }
+  if (!online) { el.classList.add("off"); $("syncText").textContent = pending ? "Offline · " + pending + " waiting to sync" : "Offline · saved on this device"; }
+  else if (pending) { el.classList.add("busy"); $("syncText").textContent = "Saving…"; }
+  else { el.classList.add("ok"); $("syncText").textContent = "Saved"; }
+}
+window.addEventListener("syncstate", ev => showSync(ev.detail.pending, ev.detail.online));
+window.addEventListener("writeerror", ev => handleWriteError(ev.detail));
+
+// ---- Owner PIN ----
+async function hashPin(pin) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("padel-nation:" + pin));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+// Asks for the PIN in a small box. Resolves true when it's right, false when cancelled.
+function askPin(title, sub) {
+  return new Promise(resolve => {
+    $("pinTitle").textContent = title;
+    $("pinSub").textContent = sub;
+    $("pinErr").textContent = "";
+    $("pinInput").value = "";
+    $("pinPop").hidden = false;
+    setTimeout(() => $("pinInput").focus(), 50);
+    const done = ok => { $("pinPop").hidden = true; $("pinForm").onsubmit = $("pinCancel").onclick = null; resolve(ok); };
+    $("pinCancel").onclick = () => done(false);
+    $("pinForm").onsubmit = async ev => {
+      ev.preventDefault();
+      if ((await hashPin($("pinInput").value.trim())) === cfg.pinHash) done(true);
+      else { $("pinErr").textContent = "That PIN isn't right."; $("pinInput").select(); }
+    };
+  });
+}
+
+// The owner's PIN check for owner-only actions. With no PIN set yet, only the owner's login gets through.
+async function ownerCheck(title, sub) {
+  if (cfg.pinHash) return askPin(title, sub);
+  if (isOwner()) return true;
+  showNotice("Only the owner can do this. Ask them to set an owner PIN in Settings.");
+  return false;
+}
+
+// ---- Locked past days ----
+function renderLock() {
+  const bar = $("lockbar");
+  if (day >= todayIso()) { bar.hidden = true; return; }
+  bar.hidden = false;
+  const open = unlockedDays.has(day);
+  bar.classList.toggle("open", open);
+  $("lockIcon").textContent = open ? "🔓" : "🔒";
+  $("lockText").textContent = open ? "Unlocked for corrections. Lock it again when you're done." : longDate(day) + " is a past day, so it's locked.";
+  $("lockBtn").textContent = open ? "Lock again" : "Unlock";
+}
+
+async function toggleLock() {
+  if (unlockedDays.has(day)) { unlockedDays.delete(day); render(); return; }
+  if (await ownerCheck("Unlock " + longDate(day), "Enter the owner PIN to make corrections to this day.")) { unlockedDays.add(day); render(); }
+}
+
+// ---- Tips for staff logins ----
+const hintSeen = k => { try { return localStorage.getItem("hint-" + k) === "1"; } catch (_) { return false; } };
+function renderHints() {
+  const staff = !!me() && !isOwner();
+  $("hintItems").hidden = !staff || hintSeen("items");
+  $("hintCourt").hidden = !staff || hintSeen("court");
+}
+
+// ---- Settings (owner) ----
+let draft = null;
+async function openSettings() {
+  if (!(await ownerCheck("Settings", "Enter the owner PIN to change items and prices."))) return;
+  draft = cfg.products.map(p => ({ name: p.name, prices: (p.prices || []).join(", "), noQty: !!p.noQty, perPrice: !!p.perPrice }));
+  $("pinNew").value = $("pinNew2").value = ""; $("setErr").textContent = "";
+  $("pinState").textContent = cfg.pinHash ? "A PIN is set. Fill these in only to change it." : "No PIN yet. Set one so Settings and past-day corrections are protected.";
+  renderSettings();
+  $("setPop").hidden = false;
+}
+function closeSettings() { draft = null; $("setPop").hidden = true; }
+
+function renderSettings() {
+  const list = $("setList");
+  list.textContent = "";
+  draft.forEach((p, i) => {
+    const row = mk("div", "set-row");
+    const name = mk("input"); name.type = "text"; name.value = p.name; name.placeholder = "Item name"; name.setAttribute("aria-label", "Item name");
+    name.oninput = () => { p.name = name.value; };
+    const prices = mk("input", "set-prices"); prices.type = "text"; prices.inputMode = "decimal"; prices.value = p.prices; prices.placeholder = "Prices, like 0.250, 0.500"; prices.setAttribute("aria-label", "Prices for " + (p.name || "item"));
+    prices.oninput = () => { p.prices = prices.value; };
+    const move = mk("div", "set-move");
+    const up = mk("button", "", "↑"); up.type = "button"; up.disabled = i === 0; up.setAttribute("aria-label", "Move up");
+    up.onclick = () => { [draft[i - 1], draft[i]] = [draft[i], draft[i - 1]]; renderSettings(); };
+    const down = mk("button", "", "↓"); down.type = "button"; down.disabled = i === draft.length - 1; down.setAttribute("aria-label", "Move down");
+    down.onclick = () => { [draft[i + 1], draft[i]] = [draft[i], draft[i + 1]]; renderSettings(); };
+    const del = mk("button", "", "×"); del.type = "button"; del.setAttribute("aria-label", "Remove " + (p.name || "item"));
+    del.onclick = async () => { if (await askConfirm("Remove " + (p.name || "this item") + "?", "Past sales of it stay saved. It just won't be on the price list.")) { draft.splice(i, 1); renderSettings(); } };
+    move.append(up, down, del);
+    const opts = mk("div", "set-opts");
+    const opt = (key, text) => { const l = mk("label"); const c = mk("input"); c.type = "checkbox"; c.checked = p[key]; c.onchange = () => { p[key] = c.checked; }; l.append(c, document.createTextNode(text)); return l; };
+    opts.append(opt("noQty", "No quantity picker"), opt("perPrice", "Separate quantity for each price"));
+    row.append(name, prices, move, opts);
+    list.append(row);
+  });
+}
+
+async function saveSettings() {
+  const err = $("setErr");
+  const products = [];
+  for (const p of draft) {
+    const name = p.name.trim();
+    if (!name) { err.textContent = "Every item needs a name."; return; }
+    if (products.some(x => x.name.toLowerCase() === name.toLowerCase())) { err.textContent = "Two items are called " + name + "."; return; }
+    const prices = p.prices.split(",").map(s => s.trim()).filter(Boolean).map(s => parseFloat(s.replace(",", ".")));
+    if (prices.some(n => !(n > 0))) { err.textContent = "Check the prices for " + name + ": numbers only, like 0.250."; return; }
+    const item = { name, prices: prices.map(r3) };
+    if (p.noQty) item.noQty = true;
+    if (p.perPrice) item.perPrice = true;
+    products.push(item);
+  }
+  if (!products.length) { err.textContent = "Keep at least one item."; return; }
+  const a = $("pinNew").value.trim(), b = $("pinNew2").value.trim();
+  let pinHash = cfg.pinHash || null;
+  if (a || b) {
+    if (!/^\d{4,8}$/.test(a)) { err.textContent = "The PIN needs 4 to 8 digits."; return; }
+    if (a !== b) { err.textContent = "The two PINs don't match."; return; }
+    pinHash = await hashPin(a);
+  }
+  try {
+    const body = { business: cfg.business || DEFAULTS.business, products };
+    if (pinHash) body.pinHash = pinHash;
+    await db.doc("config/main").set(body);
+    closeSettings();
+    toast("Settings saved");
+  } catch (e) {
+    err.textContent = e && e.code === "invalid_argument" ? "Only the owner's login can change Settings." : "Couldn't save. Check the connection and try again.";
+  }
+}
+
+// ---- Celebration when every player in a booking has paid ----
+const fullyPaid = new Set();
+let celebrateReady = false;
+function celebrate(card) {
+  if (stillMotion) return;
+  card.classList.remove("paidglow"); void card.offsetWidth; card.classList.add("paidglow");
+  const burst = mk("div", "burst");
+  const colours = ["#35f0a6", "#22c3e6", "#8a6bff", "#ff5fae", "#ffd34d"];
+  for (let i = 0; i < 26; i++) {
+    const p = mk("i");
+    const angle = Math.random() * Math.PI * 2, dist = 80 + Math.random() * 160;
+    p.style.cssText = `background:${colours[i % colours.length]};--dx:${Math.cos(angle) * dist}px;--dy:${Math.sin(angle) * dist - 40}px;--rot:${Math.random() * 540}deg;animation-delay:${Math.random() * .12}s`;
+    burst.append(p);
+  }
+  card.append(burst);
+  setTimeout(() => burst.remove(), 1400);
 }
 
 // ---- Court tabs: bookings, each one a bill split across four players ----
@@ -1242,7 +1564,7 @@ function renderCourt() {
   if (!court) return;
   $("courtTitle").textContent = "Court " + court;
   const total = entries.filter(e => e.booking && e.court === court).reduce((s, e) => s + e.amount, 0);
-  $("courtTotal").textContent = kd(total) + " KD";
+  countTo($("courtTotal"), total, n => kd(n) + " KD");
   $("newBooking").disabled = !canEditNow();
 
   const box = $("bookings");
@@ -1255,6 +1577,16 @@ function renderCourt() {
     return;
   }
   for (const b of mine) box.append(bookingCard(b));
+  // Celebrate a booking the moment its last player is marked paid (not ones already paid when the day opens).
+  if (loaded) {
+    for (const b of mine) {
+      const list = entries.filter(e => e.booking === b.id);
+      const full = list.length > 0 && list.every(e => e.paid);
+      if (full && !fullyPaid.has(b.id)) { fullyPaid.add(b.id); if (celebrateReady) celebrate(box.querySelector('.bcard[data-bid="' + b.id + '"]')); }
+      else if (!full) fullyPaid.delete(b.id);
+    }
+    celebrateReady = true;
+  }
   if (keep) {
     const el = box.querySelector('.bname[data-bid="' + keep.id + '"]');
     if (el) { el.value = keep.v; el.focus(); try { el.setSelectionRange(keep.s, keep.s); } catch (_) {} }
@@ -1269,6 +1601,7 @@ function bookingCard(b) {
   const editable = canEditNow();
   const mine = entries.filter(e => e.booking === b.id);
   const card = mk("article", "bcard glass");
+  card.dataset.bid = b.id;
 
   const head = mk("header", "bhead");
   const name = mk("input", "bname");
@@ -1389,7 +1722,7 @@ async function newBooking() {
   if (!court || !canEditNow()) return;
   const n = bookings.filter(b => b.court === court).length + 1;
   try {
-    const ref = await db.collection("bookings").add({ date: day, court, name: "Booking " + n, at: Date.now() });
+    const ref = await db.collection("bookings").add({ date: day, court, name: "Booking " + n, at: Date.now(), by: me() });
     if (ref && ref.id) { focusBid = ref.id; renderCourt(); }
   } catch (err) { handleWriteError(err); }
 }
@@ -1494,7 +1827,8 @@ function renderPick() {
   if (!list.length) ul.append(mk("li", "none", "Nothing added yet"));
   for (const e of list) {
     const li = mk("li");
-    li.append(mk("span", "amt", kd(e.amount)), mk("span", "meta", e.qty > 1 ? e.qty + " × " + kd(e.unit) : e.split ? "court ÷ " + e.split : ""));
+    const meta = [e.qty > 1 ? e.qty + " × " + kd(e.unit) : e.split ? "court ÷ " + e.split : "", e.by ? "by " + who(e.by) : ""].filter(Boolean).join(" · ");
+    li.append(mk("span", "amt", kd(e.amount)), mk("span", "meta", meta));
     const t = paidSwitch(e.paid ? "on" : "off", !editable);
     t.setAttribute("aria-label", kd(e.amount) + " KD paid");
     t.onclick = async () => { try { await setPaid([e], !e.paid); } catch (err) { handleWriteError(err); } };
@@ -1693,7 +2027,7 @@ async function addAtNextRow(product, amount, qty = 1, unit = amount, extra = {})
     const same = entries.find(e => e.booking === extra.booking && e.product === product && Number.isInteger(e.row));
     if (same) row = same.row;
   }
-  try { await db.collection("entries").add({ date: day, product, row, amount: r3(amount), qty, unit: r3(unit), paid: false, at: Date.now(), ...extra }); }
+  try { await db.collection("entries").add({ date: day, product, row, amount: r3(amount), qty, unit: r3(unit), paid: false, at: Date.now(), by: me(), ...extra }); }
   catch (err) { handleWriteError(err); }
 }
 
@@ -1722,7 +2056,7 @@ async function commitCell(inp) {
     if (existing) {
       if (r3(existing.amount) !== r3(v)) await db.collection("entries").doc(id).update({ amount: r3(v) });
     } else {
-      await db.collection("entries").add({ date: day, product, row, amount: r3(v), paid: false, at: Date.now() });
+      await db.collection("entries").add({ date: day, product, row, amount: r3(v), paid: false, at: Date.now(), by: me() });
     }
   } catch (err) { handleWriteError(err); }
 }
@@ -1753,8 +2087,18 @@ function askConfirm(title, detail) {
 }
 
 let undoTimer = null;
+function toast(msg) {
+  const t = $("toast");
+  $("toastMsg").textContent = msg;
+  $("undoBtn").hidden = true;
+  t.hidden = false;
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(() => { t.hidden = true; }, 3000);
+}
+
 function showUndo(msg, undo) {
   const t = $("toast");
+  $("undoBtn").hidden = false;
   $("toastMsg").textContent = msg;
   t.hidden = false;
   clearTimeout(undoTimer);
@@ -1808,7 +2152,7 @@ function cashButton(on, label, onClick) {
 
 function handleWriteError(err) {
   if (err && err.code === "invalid_argument") {
-    canWrite = false;
+    permOK = false;
     showNotice("You can view this report but not change it. Ask the owner for Contributor access to add sales.");
     render();
   } else if (err && err.code === "quota_exceeded") {
@@ -1825,6 +2169,7 @@ function watchDay() {
   if (unsubOut) unsubOut();
   if (unsubSummary) unsubSummary();
   prevCash = null; carry = null; cashouts = []; daySummary = undefined; outLoaded = false; summaryWriting = "";
+  fullyPaid.clear(); celebrateReady = false;
   if (pick) closePick();
   if (split) closeSplit();
   entries = []; bookings = []; loaded = false; render();
@@ -1933,6 +2278,13 @@ $("reportPop").onclick = ev => { if (ev.target === $("reportPop")) closeReport()
 $("repSend").addEventListener("click", () => setTimeout(closeReport, 300));
 $("repCopy").onclick = copyReport;
 $("splitCancel").onclick = closeSplit;
+$("gearBtn").onclick = () => { popButton($("gearBtn")); openSettings(); };
+$("lockBtn").onclick = toggleLock;
+$("setClose").onclick = closeSettings;
+$("setCancel").onclick = closeSettings;
+$("setSave").onclick = saveSettings;
+$("setAdd").onclick = () => { draft.push({ name: "", prices: "", noQty: false, perPrice: false }); renderSettings(); const inputs = $("setList").querySelectorAll(".set-row input[type=text]"); inputs[inputs.length - 2].focus(); };
+for (const b of document.querySelectorAll("[data-hint]")) b.onclick = () => { try { localStorage.setItem("hint-" + b.dataset.hint, "1"); } catch (_) {} renderHints(); };
 $("splitPop").onclick = ev => { if (ev.target === $("splitPop")) closeSplit(); };
 
 // After midnight, move a page that was showing "today" on to the new day.
@@ -1971,22 +2323,23 @@ render();
 (async () => {
   const c = window.claude;
   db = c ? await c.use("db") : null;
+  showSync(0, navigator.onLine);
   const user = c ? await c.use("user") : null;
   if (!db) {
     loaded = true;
-    canWrite = false;
+    permOK = false;
     showNotice("Saved sales can't load. Check the internet connection and reload the page.");
     render();
     return;
   }
   if (user) {
     const w = await user.can("data.write");
-    if (w === false) { canWrite = false; showNotice("You can view this report but not change it."); }
+    if (w === false) { permOK = false; showNotice("You can view this report but not change it."); }
   }
   db.doc("config/main").onSnapshot(snap => {
     if (snap.exists) {
       const d = snap.data();
-      cfg = { business: d.business || DEFAULTS.business, products: Array.isArray(d.products) && d.products.length ? d.products : DEFAULTS.products };
+      cfg = { business: d.business || DEFAULTS.business, pinHash: d.pinHash || null, products: Array.isArray(d.products) && d.products.length ? d.products : DEFAULTS.products };
       render();
     }
   }, () => {});
