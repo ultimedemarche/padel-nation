@@ -221,3 +221,40 @@ header.top .bar { background: radial-gradient(120% 160% at 0% 0%, rgba(240, 122,
     radial-gradient(ellipse 85% 75% at 50% 45%, rgba(3, 6, 11, .2), rgba(3, 6, 11, .72)),
     linear-gradient(180deg, rgba(3, 6, 11, .45) 0%, rgba(3, 6, 11, .25) 40%, rgba(3, 6, 11, .62) 100%);
 }
+
+/* ---- Customer credit (Credit tab, demo only for now) ---- */
+.cr-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; margin-top: 14px; }
+.crc { border-radius: 24px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
+.crc-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.crc-name { margin: 0; font-size: 1.15rem; font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
+.crc-bal { display: grid; justify-items: end; line-height: 1.1; }
+.crc-bal b { font-size: 1.35rem; color: var(--lime); }
+.crc-bal .cur { font-size: .72rem; color: var(--muted); }
+.crc-lab { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.crc.owes .crc-bal b { color: var(--orange); }
+.crc.owes { box-shadow: inset 3px 0 0 var(--orange); }
+.crc-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.crc-acts .mbtn { min-height: 40px; padding: 0 16px; border-radius: 14px; }
+.crc-acts .linkbtn { margin-left: auto; }
+.crc-hist .co-list li.paid .co-amt { color: var(--lime); }
+.crc-hist .co-list li { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto auto; gap: 8px; }
+.crc-hist .co-what { font-size: .88rem; overflow-wrap: anywhere; }
+.cr-who { flex-wrap: wrap; }
+.cr-who button { flex: 0 1 auto; padding: 0 16px; }
+.cr-sales li { padding: 0; }
+.cr-sales label { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 4px 12px; cursor: pointer; }
+.cr-sales input { width: 20px; height: 20px; accent-color: var(--orange); flex: none; }
+.cr-sales li.on { background: rgba(240, 122, 44, .18); }
+.cr-cash { display: flex; align-items: center; gap: 10px; font-size: .9rem; color: var(--muted); }
+.cr-cash input { width: 20px; height: 20px; accent-color: var(--lime); }
+/* A sale put on credit: orange amount in the Items table, "Credit" on the booking switch. */
+.cellbox.credit input.amt { color: var(--orange); }
+.cellbox.credit::after { content: ""; position: absolute; left: 4px; top: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--orange); pointer-events: none; }
+.psw.credit .knob { background: linear-gradient(120deg, var(--orange), var(--orange-deep)); }
+.psw.credit .pswl { color: var(--orange-soft); }
+/* Four tabs (with Credit) on a narrow phone. */
+@media (max-width: 420px) { .tab { padding: 0 6px; gap: 5px; } }
+/* Credit popups: one column that never grows wider than the screen. */
+#crPop .confirm-card, #payForm { grid-template-columns: minmax(0, 1fr); }
+#crPop .set-sec { text-align: left; margin-top: 4px; }
+#crPop .pick-other input, #payForm .pick-other input { width: 100%; }

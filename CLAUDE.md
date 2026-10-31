@@ -31,6 +31,16 @@ Static site on GitHub Pages; data in Firebase (Firestore + Email/Password login)
 Queries that filter one field and sort another are sorted on the device (firebase.js) so no
 composite indexes are needed.
 
+- `customers` — {name, at, by}. `credit` — {customer, kind "took" | "paid", date, amount, at, by};
+  "took" has `entries` (sale ids) + `items` (labels), or a typed amount with `note`; "paid" has `cash`.
+  Sales put on credit get {paid: true, cash: false, credit: <credit id>} and can only be changed from the Credit tab.
+
+## Customer credit (TEST: on only with ?demo)
+`const CREDIT` in index.html switches it on; it is true only in the demo until the owner approves it for the
+real app (then set it to `true`). Credit tab: customers + balances + history, "Put on credit" (owner PIN),
+Payment (anyone, all or part, cash goes into Cash in drawer and `days/<date>.cashIn`), Copy reminder.
+The WhatsApp report gets a "📒 Credit" block only on days credit was given or paid back.
+
 ## People, Settings, locking
 - Owner = `crowly@padelnation.app` (const OWNER in index.html, and in the Firestore rules). Other logins are
   staff, added in Firebase → Authentication → Users. Every new record stores `by` (login email).

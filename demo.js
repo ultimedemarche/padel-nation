@@ -88,6 +88,10 @@ put("entries", "w2", { date: today, product: "Gatorade", row: 0, amount: 0.75, q
 put("entries", "w3", { date: today, product: "Grip", row: 0, amount: 1.5, qty: 1, unit: 1.5, paid: true, cash: true, at: at() });
 put("cashouts", "o1", { date: today, amount: 1, note: "Garbage bags", at: at() });
 
+// Credit tab (demo only for now): a regular who played yesterday on credit.
+put("customers", "c1", { name: "Abu Khalid", at: at() });
+put("credit", "cr1", { customer: "c1", kind: "took", date: yesterday, amount: 13, note: "Court", at: at() });
+
 // ---- Demo banner; no sign-in needed ----
 const banner = document.createElement("div");
 banner.className = "demo-banner";

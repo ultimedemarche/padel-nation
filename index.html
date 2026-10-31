@@ -689,6 +689,7 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
       <button class="tab" role="tab" data-tab="court1" id="tab-court1">Court 1<span class="tcount num" id="tabCount1"></span></button>
       <button class="tab" role="tab" data-tab="court2" id="tab-court2">Court 2<span class="tcount num" id="tabCount2"></span></button>
       <button class="tab" role="tab" data-tab="items" id="tab-items">Items</button>
+      <button class="tab" role="tab" data-tab="credit" id="tab-credit" hidden>Credit<span class="tcount num" id="tabCountCr"></span></button>
     </nav>
     <div class="tools">
     <div class="sync glass" id="sync" role="status" aria-live="polite"><span class="dot"></span><span id="syncText">Connecting…</span></div>
@@ -720,6 +721,20 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
         </div>
       </div>
       <div class="bookings" id="bookings"></div>
+    </section>
+
+    <section class="sheet-block" id="creditView" hidden>
+      <div class="court-head">
+        <div class="court-intro">
+          <h2 class="sec-title">Credit</h2>
+          <p class="sheet-hint">Customers who play now and pay later. Only the owner can put sales on credit; anyone can record a payment.</p>
+        </div>
+        <div class="court-actions">
+          <span class="court-total num" id="crOwed">0.000 KD</span>
+          <button class="mbtn newb" id="crGive" type="button">+ Put on credit</button>
+        </div>
+      </div>
+      <div class="cr-list" id="crList"></div>
     </section>
 
     <div class="view" id="itemsView">
@@ -877,6 +892,45 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   </div>
 </div>
 
+<div class="confirm pop" id="crPop" hidden>
+  <div class="confirm-card pick glass" role="dialog" aria-modal="true" aria-labelledby="crTitle">
+    <h2 id="crTitle">Put on credit</h2>
+    <p id="crSub"></p>
+    <h3 class="set-sec">Customer</h3>
+    <div class="split-n cr-who" id="crWho" role="group" aria-label="Customer"></div>
+    <div class="pick-other"><input id="crNew" type="text" autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="New customer name" aria-label="New customer name"></div>
+    <h3 class="set-sec">Unpaid sales</h3>
+    <ul class="pick-list cr-sales num" id="crSales"></ul>
+    <h3 class="set-sec">Or an amount by hand</h3>
+    <div class="pick-other">
+      <input id="crAmt" type="text" inputmode="decimal" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="Amount KD" aria-label="Amount on credit in KD">
+      <input id="crNote" type="text" autocomplete="off" autocapitalize="sentences" enterkeyhint="done" placeholder="What for? (optional)" aria-label="What the credit was for">
+    </div>
+    <p class="pin-err" id="crErr" role="alert"></p>
+    <div class="confirm-actions">
+      <button class="mbtn keep" id="crCancel" type="button">Cancel</button>
+      <button class="mbtn" id="crSave" type="button">Put on credit</button>
+    </div>
+  </div>
+</div>
+
+<div class="confirm pop" id="payPop" hidden>
+  <form class="confirm-card pick glass" id="payForm" role="dialog" aria-modal="true" aria-labelledby="payTitle">
+    <h2 id="payTitle">Payment</h2>
+    <p id="paySub" class="num"></p>
+    <div class="pick-other">
+      <input id="payAmt" type="text" inputmode="decimal" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="Amount KD" aria-label="Amount paid in KD">
+      <button class="mbtn" id="payFull" type="button">All</button>
+    </div>
+    <label class="cr-cash"><input type="checkbox" id="payCash" checked> Paid in cash (goes into Cash in drawer)</label>
+    <p class="pin-err" id="payErr" role="alert"></p>
+    <div class="confirm-actions">
+      <button class="mbtn keep" id="payCancel" type="button">Cancel</button>
+      <button class="mbtn" id="paySave" type="submit">Save payment</button>
+    </div>
+  </form>
+</div>
+
 <div class="confirm pop" id="splitPop" hidden>
   <div class="confirm-card pick glass" role="dialog" aria-modal="true" aria-labelledby="splitTitle">
     <h2 id="splitTitle">Split court</h2>
@@ -930,6 +984,10 @@ const isOwner = () => me() === OWNER;
 // A short name for "who added this": the part of the login email before the @, capitalised.
 const who = email => email ? email.split("@")[0].replace(/^./, c => c.toUpperCase()) : "";
 
+// ---- Customer credit ----
+// Being tried out in the demo (?demo) first; the real app gets it once the owner approves (set this to true).
+const CREDIT = new URLSearchParams(location.search).has("demo");
+
 // ---- Past days are locked ----
 // Yesterday and earlier are read-only once the day is over; the owner PIN unlocks one day at a time.
 const todayIso = () => iso(new Date());
@@ -951,7 +1009,7 @@ let split = null;
 let focusBid = null;
 let tab = "items";
 try { tab = localStorage.getItem("tab") || "items"; } catch (_) {}
-if (!["court1", "court2", "items"].includes(tab)) tab = "items";
+if (!["court1", "court2", "items", ...(CREDIT ? ["credit"] : [])].includes(tab)) tab = "items";
 const PLAYERS = 4;
 
 const $ = id => document.getElementById(id);
@@ -1012,7 +1070,8 @@ function itemRows() {
 }
 
 async function removeGroup(g, inp) {
-  const b = bookings.find(x => x.id === g.booking);
+  if (onCredit(g.members)) { if (inp) inp.value = kd(g.amount); return; }
+  const b =bookings.find(x => x.id === g.booking);
   const ok = await askConfirm("Remove this sale?", g.product + " · " + kd(g.amount) + " KD · " + (b && b.name ? b.name : "Booking") + ", Court " + g.court + " (all players)");
   if (!ok) { if (inp) inp.value = kd(g.amount); return; }
   const saved = g.members.map(e => { const c = { ...e }; delete c.id; return [e.id, c]; });
@@ -1144,17 +1203,20 @@ function renderSheet(t) {
       // Hold a finger on (or hover) a filled cell to see who added it.
       const by = e ? (e.group ? [...new Set(e.members.map(m => who(m.by)).filter(Boolean))].join(", ") : who(e.by)) : "";
       inp.parentElement.title = by ? "Added by " + by : "";
+      const cr = e && (e.group ? e.members.find(m => m.credit) : e.credit ? e : null);
+      inp.parentElement.classList.toggle("credit", !!cr);
+      if (cr) inp.parentElement.title = "On credit · " + creditName(cr) + (by ? " · added by " + by : "");
       if (document.activeElement !== inp) { inp.value = e ? kd(e.amount) : ""; inp.classList.remove("bad"); }
       cb.dataset.id = e ? e.id : "";
       cb.checked = !!(e && e.paid);
-      cb.disabled = !e || !canWrite;
+      cb.disabled = !e || !canWrite || !!cr;
       const kb = $("k-" + c + "-" + r);
       kb.dataset.id = e ? e.id : "";
       kb.classList.toggle("on", !!(e && e.cash));
       kb.setAttribute("aria-pressed", e && e.cash ? "true" : "false");
       // The cash note only appears once the sale is ticked Paid.
-      kb.disabled = !e || !canWrite || !e.paid;
-      kb.classList.toggle("hid", !(e && e.paid));
+      kb.disabled = !e || !canWrite || !e.paid || !!cr;
+      kb.classList.toggle("hid", !(e && e.paid) || !!cr);
     }
     const p = t.by[n] || { total: 0, unpaid: 0, count: 0 };
     const cells = grid[n].filter(Boolean).length;
@@ -1182,8 +1244,11 @@ function render() {
   renderPrices();
   renderSheet(t);
   renderCourt();
+  renderCredit();
   renderCashCounter();
   if (pick) renderPick();
+  if (crDraft) renderGive();
+  if (payFor) renderPay();
   if (split) renderSplit();
   if (reportOpen) renderReport();
   syncDaySummary();
@@ -1204,8 +1269,8 @@ let daySummary;          // undefined = not loaded yet, null = none saved
 let outLoaded = false;
 let summaryWriting = "";
 function syncDaySummary() {
-  if (!db || !loaded || !outLoaded || daySummary === undefined || !canWrite) return;
-  const cashIn = r3(entries.filter(e => e.cash && e.paid).reduce((s, e) => s + e.amount, 0));
+  if (!db || !loaded || !outLoaded || daySummary === undefined || !canWrite || (CREDIT && !creditLoaded)) return;
+  const cashIn = r3(entries.filter(e => e.cash && e.paid).reduce((s, e) => s + e.amount, 0) + creditCash());
   const cashOut = r3(cashouts.reduce((s, o) => s + o.amount, 0));
   const key = day + "|" + cashIn + "|" + cashOut;
   if (daySummary ? daySummary.cashIn === cashIn && daySummary.cashOut === cashOut : !cashIn && !cashOut) return;
@@ -1281,7 +1346,7 @@ async function removeCashOut(o) {
 // null while the carry-over is still being worked out.
 function drawerNow() {
   if (prevCash == null && !carry) return null;
-  const pay = entries.filter(e => e.cash && e.paid).reduce((s, e) => s + e.amount, 0);
+  const pay = entries.filter(e => e.cash && e.paid).reduce((s, e) => s + e.amount, 0) + creditCash();
   const out = cashouts.reduce((s, o) => s + o.amount, 0);
   return r3(effectivePrev() + pay - out);
 }
@@ -1308,6 +1373,7 @@ function reportText() {
     repRow("TOTAL", t.final),
     "```",
     "",
+    ...creditLines(),
     "💵 *I have Cash: " + (cash == null ? "…" : kd(cash)) + " KD*"
   ].join("\n");
 }
@@ -1370,7 +1436,8 @@ function renderCashCounter() {
   const editable = canEditNow();
   // Count each sale (each player's share) on its own, so one player paying cash in a shared court counts.
   const rows = entries.filter(e => e.cash && e.paid);
-  const total = r3(rows.reduce((s, r) => s + r.amount, 0));
+  const crCash = r3(creditCash());
+  const total = r3(rows.reduce((s, r) => s + r.amount, 0) + crCash);
   const outTotal = r3(cashouts.reduce((s, o) => s + o.amount, 0));
   const prevVal = effectivePrev();
   countTo($("cashTotal"), total);
@@ -1400,7 +1467,8 @@ function renderCashCounter() {
     li.append(x);
     ul.append(li);
   }
-  $("cashCount").textContent = rows.length ? rows.length + " sale" + (rows.length > 1 ? "s" : "") + " marked as cash" : "No sales marked as cash yet";
+  $("cashCount").textContent = (rows.length ? rows.length + " sale" + (rows.length > 1 ? "s" : "") + " marked as cash" : crCash ? "" : "No sales marked as cash yet")
+    + (crCash ? (rows.length ? " + credit paid back" : "Credit paid back") : "");
   const by = $("cashBy");
   by.textContent = "";
   for (const n of productNames()) {
@@ -1409,6 +1477,7 @@ function renderCashCounter() {
     const chip = mk("span"); chip.append(mk("b", "", n), document.createTextNode(kd(s)));
     by.append(chip);
   }
+  if (crCash) { const chip = mk("span"); chip.append(mk("b", "", "Credit paid"), document.createTextNode(kd(crCash))); by.append(chip); }
 }
 
 // ---- Numbers that count up to their new value ----
@@ -1618,7 +1687,8 @@ function renderTabs() {
     b.setAttribute("aria-selected", on ? "true" : "false");
   }
   $("itemsView").hidden = tab !== "items";
-  $("courtView").hidden = tab === "items";
+  $("courtView").hidden = !courtOf(tab);
+  $("creditView").hidden = tab !== "credit";
   for (const n of [1, 2]) {
     const c = bookings.filter(b => b.court === n).length;
     $("tabCount" + n).textContent = c ? c : "";
@@ -1752,8 +1822,14 @@ function bookingCard(b) {
     const btn = paidSwitch(all ? "on" : some ? "part" : "off", !editable || !list.length);
     btn.setAttribute("aria-label", "Player " + (p + 1) + " paid");
     btn.onclick = () => togglePlayerPaid(b, p);
+    const crList = list.filter(e => e.credit);
+    if (crList.length) {
+      btn.classList.add("credit");
+      if (crList.length === list.length) btn.querySelector(".pswl").textContent = "Credit";
+      btn.title = "On credit · " + creditName(crList[0]);
+    }
     // Cash note beside the switch, once the player has paid something.
-    const paidList = list.filter(e => e.paid);
+    const paidList = list.filter(e => e.paid && !e.credit);
     const cb = cashButton(paidList.length && paidList.every(e => e.cash), "Player " + (p + 1) + " paid in cash", () => togglePlayerCash(b, p));
     cb.disabled = !editable || !paidList.length;
     cb.classList.toggle("hid", !paidList.length);
@@ -1798,6 +1874,7 @@ async function newBooking() {
 
 async function deleteBooking(b) {
   const list = entries.filter(e => e.booking === b.id);
+  if (onCredit(list)) return;
   const total = list.reduce((s, e) => s + e.amount, 0);
   const ok = await askConfirm("Delete this booking?", (b.name || "Booking") + (list.length ? " · " + list.length + " sales · " + kd(total) + " KD, also removed from Items" : " · no sales yet"));
   if (!ok) return;
@@ -1816,7 +1893,7 @@ async function deleteBooking(b) {
 // Clear one player's cell: asks first, then offers Undo, like the Items table.
 async function removeCell(b, p, prod) {
   const list = entries.filter(e => e.booking === b.id && e.player === p && e.product === prod);
-  if (!list.length) return;
+  if (!list.length || onCredit(list)) return;
   const total = list.reduce((s, e) => s + e.amount, 0);
   const ok = await askConfirm("Remove this sale?", prod + " · Player " + (p + 1) + " · " + kd(total) + " KD" + (list.length > 1 ? " (" + list.length + " sales)" : ""));
   if (!ok) return;
@@ -1901,9 +1978,10 @@ function renderPick() {
     const t = paidSwitch(e.paid ? "on" : "off", !editable);
     t.setAttribute("aria-label", kd(e.amount) + " KD paid");
     t.onclick = async () => { try { await setPaid([e], !e.paid); } catch (err) { handleWriteError(err); } };
+    if (e.credit) { t.classList.add("credit"); t.querySelector(".pswl").textContent = "Credit"; t.title = "On credit · " + creditName(e); }
     const cash = cashButton(!!e.cash, kd(e.amount) + " KD paid in cash", async () => { try { await setCash([e], !e.cash); } catch (err) { handleWriteError(err); } });
-    cash.disabled = !editable || !e.paid;
-    cash.classList.toggle("hid", !e.paid);
+    cash.disabled = !editable || !e.paid || !!e.credit;
+    cash.classList.toggle("hid", !e.paid || !!e.credit);
     const x = mk("button", "bdel", "×");
     x.setAttribute("aria-label", "Remove " + kd(e.amount) + " KD");
     x.disabled = !editable;
@@ -2122,6 +2200,7 @@ async function commitCell(inp) {
     if (!(v > 0)) { inp.classList.add("bad"); return; }
     inp.classList.remove("bad");
     inp.value = kd(v);
+    if (existing && existing.credit && r3(existing.amount) !== r3(v)) { inp.value = kd(existing.amount); onCredit([existing]); return; }
     if (existing) {
       if (r3(existing.amount) !== r3(v)) await db.collection("entries").doc(id).update({ amount: r3(v) });
     } else {
@@ -2132,7 +2211,8 @@ async function commitCell(inp) {
 
 // Removing a sale asks first, then offers Undo for a few seconds.
 async function removeSale(existing, inp, skipAsk = false) {
-  const ok = skipAsk || await askConfirm("Remove this sale?", existing.product + " · " + kd(existing.amount) + " KD" + (existing.paid ? " · Paid" : " · Unpaid"));
+  if (onCredit([existing])) { if (inp) inp.value = kd(existing.amount); return; }
+  const ok =skipAsk || await askConfirm("Remove this sale?", existing.product + " · " + kd(existing.amount) + " KD" + (existing.paid ? " · Paid" : " · Unpaid"));
   if (!ok) { if (inp) inp.value = kd(existing.amount); return; }
   const saved = { ...existing }; delete saved.id;
   try {
@@ -2182,6 +2262,10 @@ function showUndo(msg, undo) {
 // Paid on/off for some sales. Marking paid never marks cash; marking unpaid also clears the cash
 // mark, because money that wasn't paid can't be cash in the drawer.
 async function setPaid(list, paid) {
+  // Sales on credit stay as they are; they change only from the Credit tab.
+  const free = list.filter(e => !e.credit);
+  if (!free.length) { onCredit(list); return; }
+  list = free;
   for (const e of list) {
     if (!!e.paid === paid && (paid || !e.cash)) continue;
     await db.collection("entries").doc(e.id).update(paid ? { paid: true } : { paid: false, cash: false });
@@ -2190,7 +2274,7 @@ async function setPaid(list, paid) {
 
 // Cash on/off for some sales; only paid sales can be cash.
 async function setCash(list, cash) {
-  for (const e of list) if (e.paid && !!e.cash !== cash) await db.collection("entries").doc(e.id).update({ cash });
+  for (const e of list) if (e.paid && !e.credit && !!e.cash !== cash) await db.collection("entries").doc(e.id).update({ cash });
 }
 
 async function togglePaid(cb) {
@@ -2217,6 +2301,298 @@ function cashButton(on, label, onClick) {
   b.setAttribute("aria-pressed", on ? "true" : "false");
   b.onclick = onClick;
   return b;
+}
+
+// ---- Customer credit: customers who play now and pay later ----
+// customers/<id> {name}; credit/<id> {customer, kind "took" | "paid", date, amount, ...}.
+// "took": sales of that day put on a customer's account. Those sales stay in the day's totals and are
+// marked {paid: true, credit: <record id>} but never cash. Or a typed amount (an old balance) with a note.
+// "paid": money the customer paid back on that day, all or part; cash payments go into the drawer.
+// Only the owner (PIN) puts sales on credit or removes a record; anyone can record a payment.
+let customers = [], credits = [], creditLoaded = false;
+let crDraft = null, payFor = null;
+
+const crName = id => (customers.find(c => c.id === id) || {}).name || "Customer";
+const creditName = e => { const r = credits.find(x => x.id === e.credit); return r ? crName(r.customer) : "a customer"; };
+// What a customer owes, counting everything up to the end of a day (or everything).
+const balanceOf = (id, upTo) => r3(credits.filter(r => r.customer === id && (!upTo || r.date <= upTo))
+  .reduce((s, r) => s + (r.kind === "paid" ? -r.amount : r.amount), 0));
+const creditCash = () => credits.filter(r => r.kind === "paid" && r.cash && r.date === day).reduce((s, r) => s + r.amount, 0);
+const shortDate = s => parseIso(s).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+
+function onCredit(list) {
+  const e = list.find(x => x.credit);
+  if (!e) return false;
+  toast("On credit for " + creditName(e) + ". Change it in the Credit tab.");
+  return true;
+}
+
+function watchCredit() {
+  db.collection("customers").onSnapshot(snap => {
+    customers = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => a.name.localeCompare(b.name));
+    render();
+  }, () => {});
+  db.collection("credit").orderBy("at").onSnapshot(snap => {
+    credits = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    creditLoaded = true;
+    render();
+  }, () => showNotice("Lost the connection to the credit list. Reload the page to reconnect."));
+}
+
+// Lines for the WhatsApp report, only on a day credit was given or paid back.
+function creditLines() {
+  const today = credits.filter(r => r.date === day);
+  if (!today.length) return [];
+  const lines = ["📒 *Credit*"];
+  for (const id of [...new Set(today.map(r => r.customer))]) {
+    const sum = kind => r3(today.filter(r => r.customer === id && r.kind === kind).reduce((s, r) => s + r.amount, 0));
+    const took = sum("took"), paid = sum("paid"), left = balanceOf(id, day);
+    if (took) lines.push("• " + crName(id) + " took " + kd(took) + " KD on credit");
+    if (paid) lines.push("• " + crName(id) + " paid " + kd(paid) + " KD" + (left > 0 ? " (still owes " + kd(left) + " KD)" : " (all paid ✅)"));
+  }
+  return [...lines, ""];
+}
+
+function renderCredit() {
+  const on = CREDIT && !!db;
+  $("tab-credit").hidden = !on;
+  if (!on) return;
+  const owing = customers.filter(c => balanceOf(c.id) > 0);
+  $("tabCountCr").textContent = owing.length || "";
+  if (tab !== "credit") return;
+  const editable = canEditNow();
+  countTo($("crOwed"), owing.reduce((s, c) => s + balanceOf(c.id), 0), n => "Owed " + kd(n) + " KD");
+  $("crGive").disabled = !editable;
+
+  const box = $("crList");
+  const open = new Set([...box.querySelectorAll("details[open]")].map(d => d.dataset.cid));
+  box.textContent = "";
+  if (!customers.length) {
+    box.append(mk("div", "empty glass", creditLoaded ? "No credit customers yet. Tap “+ Put on credit” to add the first one." : "Loading…"));
+    return;
+  }
+  const list = [...customers].sort((a, b) => (balanceOf(b.id) > 0) - (balanceOf(a.id) > 0) || a.name.localeCompare(b.name));
+  for (const c of list) {
+    const owes = balanceOf(c.id);
+    const card = mk("article", "crc glass" + (owes > 0 ? " owes" : ""));
+    const head = mk("header", "crc-head");
+    const name = mk("h3", "crc-name", c.name);
+    const bal = mk("div", "crc-bal num");
+    bal.append(mk("span", "crc-lab", owes > 0 ? "Owes" : "All paid"), mk("b", "", kd(owes)), mk("span", "cur", "KD"));
+    head.append(name, bal);
+    const acts = mk("div", "crc-acts");
+    const pay = mk("button", "mbtn", "Payment");
+    pay.type = "button"; pay.disabled = !editable || owes <= 0;
+    pay.onclick = () => { popButton(pay); openPay(c); };
+    const more = mk("button", "mbtn keep", "+ Credit");
+    more.type = "button"; more.disabled = !editable;
+    more.onclick = () => { popButton(more); openGive(c.id); };
+    const rem = mk("button", "linkbtn", "Copy reminder");
+    rem.type = "button"; rem.hidden = owes <= 0;
+    rem.onclick = () => copyReminder(c);
+    acts.append(pay, more, rem);
+
+    const recs = credits.filter(r => r.customer === c.id).sort((a, b) => b.date.localeCompare(a.date) || b.at - a.at);
+    const hist = mk("details", "co-log crc-hist");
+    hist.dataset.cid = c.id;
+    hist.open = open.has(c.id);
+    const sum = mk("summary");
+    sum.append(mk("span", "", "History · " + recs.length), mk("span", "co-chev"));
+    sum.querySelector(".co-chev").setAttribute("aria-hidden", "true");
+    const ul = mk("ul", "co-list num");
+    for (const r of recs) {
+      const li = mk("li", r.kind === "paid" ? "paid" : "took");
+      const what = r.kind === "paid" ? "Paid" + (r.cash ? " · cash" : "") : (r.items && r.items.length ? r.items.join(", ") : r.note || "On credit");
+      const w = mk("span", "co-what", what);
+      if (r.kind === "took" && r.note && r.items && r.items.length) w.append(mk("span", "co-note", " · " + r.note));
+      li.append(mk("span", "co-time", shortDate(r.date)), w, mk("span", "co-amt", (r.kind === "paid" ? "−" : "+") + kd(r.amount)));
+      const x = mk("button", "bdel", "×");
+      x.setAttribute("aria-label", "Remove " + (r.kind === "paid" ? "payment" : "credit") + " " + kd(r.amount) + " KD");
+      x.disabled = !db;
+      x.onclick = () => removeCredit(r);
+      li.append(x);
+      ul.append(li);
+    }
+    hist.append(sum, ul);
+    card.append(head, acts);
+    if (recs.length) card.append(hist);
+    box.append(card);
+  }
+}
+
+// Unpaid sales of the day that can go on credit: each walk-in sale, and each booking player's whole share.
+function creditCandidates() {
+  const out = [], groups = new Map();
+  for (const e of entries) {
+    if (e.paid || e.credit) continue;
+    if (!e.booking) { out.push({ key: e.id, label: e.product, amount: e.amount, list: [e] }); continue; }
+    const k = e.booking + "|" + e.player;
+    let g = groups.get(k);
+    if (!g) {
+      const b = bookings.find(x => x.id === e.booking);
+      g = { key: k, who: (b && b.name ? b.name : "Booking") + " · Player " + (e.player + 1), products: [], amount: 0, list: [] };
+      groups.set(k, g); out.push(g);
+    }
+    g.amount = r3(g.amount + e.amount);
+    if (!g.products.includes(e.product)) g.products.push(e.product);
+    g.list.push(e);
+  }
+  for (const g of groups.values()) g.label = g.products.join(" + ") + " (" + g.who + ")";
+  return out;
+}
+
+async function openGive(customerId) {
+  if (!canEditNow()) return;
+  if (!(await ownerCheck("Put on credit", "Only the owner can give credit. Enter the owner PIN."))) return;
+  crDraft = { customer: customerId || null, picked: new Set() };
+  $("crNew").value = $("crAmt").value = $("crNote").value = "";
+  $("crErr").textContent = "";
+  $("crPop").hidden = false;
+  renderGive();
+}
+function closeGive() { crDraft = null; $("crPop").hidden = true; }
+
+function renderGive() {
+  $("crSub").textContent = longDate(day);
+  const whoBox = $("crWho");
+  whoBox.textContent = "";
+  for (const c of customers) {
+    const on = crDraft.customer === c.id;
+    const b = mk("button", on ? "on" : "", c.name);
+    b.type = "button";
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+    b.onclick = () => { crDraft.customer = on ? null : c.id; $("crNew").value = ""; renderGive(); };
+    whoBox.append(b);
+  }
+  whoBox.hidden = !customers.length;
+  $("crNew").placeholder = customers.length ? "Or a new customer's name" : "Customer's name";
+
+  const cands = creditCandidates();
+  for (const k of [...crDraft.picked]) if (!cands.some(c => c.key === k)) crDraft.picked.delete(k);
+  const ul = $("crSales");
+  ul.textContent = "";
+  if (!cands.length) ul.append(mk("li", "none", "No unpaid sales on this day"));
+  for (const c of cands) {
+    const li = mk("li", "crs" + (crDraft.picked.has(c.key) ? " on" : ""));
+    const lab = mk("label");
+    const cb = mk("input"); cb.type = "checkbox"; cb.checked = crDraft.picked.has(c.key);
+    cb.onchange = () => { cb.checked ? crDraft.picked.add(c.key) : crDraft.picked.delete(c.key); renderGive(); };
+    lab.append(cb, mk("span", "meta", c.label), mk("span", "amt", kd(c.amount)));
+    li.append(lab);
+    ul.append(li);
+  }
+  const total = r3(cands.filter(c => crDraft.picked.has(c.key)).reduce((s, c) => s + c.amount, 0) + (parseFloat($("crAmt").value.replace(",", ".")) || 0));
+  $("crSave").textContent = total > 0 ? "Put " + kd(total) + " KD on credit" : "Put on credit";
+}
+
+async function saveGive() {
+  const err = $("crErr");
+  const picked = creditCandidates().filter(c => crDraft.picked.has(c.key));
+  const raw = $("crAmt").value.trim().replace(",", ".");
+  const hand = raw ? parseFloat(raw) : 0;
+  if (raw && !(hand > 0)) { err.textContent = "Type the amount as a number, like 5.000."; return; }
+  if (!picked.length && !hand) { err.textContent = "Tick a sale, or type an amount."; return; }
+  const newName = $("crNew").value.trim().replace(/\s+/g, " ").slice(0, 40);
+  let cid = crDraft.customer;
+  if (!cid && !newName) { err.textContent = "Choose the customer, or type a new name."; return; }
+  if (!canEditNow()) return;
+  try {
+    if (!cid) {
+      const same = customers.find(c => c.name.toLowerCase() === newName.toLowerCase());
+      cid = same ? same.id : (await db.collection("customers").add({ name: newName, at: Date.now(), by: me() })).id;
+    }
+    const list = picked.flatMap(c => c.list);
+    let total = 0;
+    if (list.length) {
+      const amount = r3(list.reduce((s, e) => s + e.amount, 0));
+      const ref = await db.collection("credit").add({ customer: cid, kind: "took", date: day, amount, entries: list.map(e => e.id), items: picked.map(c => c.label), at: Date.now(), by: me() });
+      for (const e of list) await db.collection("entries").doc(e.id).update({ paid: true, cash: false, credit: ref.id });
+      total += amount;
+    }
+    if (hand) {
+      await db.collection("credit").add({ customer: cid, kind: "took", date: day, amount: r3(hand), note: $("crNote").value.trim().slice(0, 80), at: Date.now() + 1, by: me() });
+      total += hand;
+    }
+    const name = customers.find(c => c.id === cid) ? crName(cid) : newName;
+    closeGive();
+    toast(kd(total) + " KD put on credit for " + name);
+  } catch (e) { handleWriteError(e); }
+}
+
+function openPay(c) {
+  if (!canEditNow()) return;
+  payFor = c.id;
+  $("payAmt").value = "";
+  $("payCash").checked = true;
+  $("payErr").textContent = "";
+  $("payPop").hidden = false;
+  renderPay();
+  setTimeout(() => $("payAmt").focus(), 50);
+}
+function closePay() { payFor = null; $("payPop").hidden = true; }
+
+function renderPay() {
+  const owes = balanceOf(payFor);
+  $("payTitle").textContent = crName(payFor) + " pays";
+  $("paySub").textContent = "Owes " + kd(owes) + " KD · " + longDate(day);
+  $("payFull").textContent = "All " + kd(owes);
+}
+
+async function savePay(ev) {
+  ev.preventDefault();
+  const owes = balanceOf(payFor);
+  const v = r3(parseFloat($("payAmt").value.trim().replace(",", ".")));
+  if (!(v > 0)) { $("payErr").textContent = "Type the amount paid, like 5.000."; $("payAmt").focus(); return; }
+  if (v > owes) { $("payErr").textContent = crName(payFor) + " only owes " + kd(owes) + " KD."; return; }
+  if (!canEditNow()) return;
+  const id = payFor, cash = $("payCash").checked;
+  try {
+    await db.collection("credit").add({ customer: id, kind: "paid", date: day, amount: v, cash, at: Date.now(), by: me() });
+    closePay();
+    const left = r3(owes - v);
+    toast(crName(id) + " paid " + kd(v) + " KD" + (left > 0 ? " · still owes " + kd(left) : " · all paid"));
+  } catch (e) { handleWriteError(e); }
+}
+
+async function removeCredit(r) {
+  // A cash payment is part of its day's drawer, so it's removed while that day is open.
+  if (r.kind === "paid" && r.cash && (r.date !== day || !canEditNow())) {
+    toast("Go to " + longDate(r.date) + " to remove this cash payment.");
+    return;
+  }
+  if (!(await ownerCheck("Change credit", "Only the owner can remove credit records. Enter the owner PIN."))) return;
+  const sales = r.entries && r.entries.length;
+  const ok = await askConfirm(r.kind === "paid" ? "Remove this payment?" : "Remove this credit?",
+    crName(r.customer) + " · " + kd(r.amount) + " KD · " + longDate(r.date) + (sales ? ". Its sales go back to unpaid." : ""));
+  if (!ok) return;
+  const saved = { ...r }; delete saved.id;
+  const setEntries = async patch => { for (const id of r.entries || []) await db.collection("entries").doc(id).update(patch).catch(() => {}); };
+  try {
+    await setEntries({ paid: false, cash: false, credit: null });
+    await db.collection("credit").doc(r.id).delete();
+    showUndo((r.kind === "paid" ? "Payment " : "Credit ") + kd(r.amount) + " KD removed", async () => {
+      await db.collection("credit").doc(r.id).set(saved);
+      await setEntries({ paid: true, cash: false, credit: r.id });
+    });
+  } catch (e) { handleWriteError(e); }
+}
+
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; }
+  catch (_) {
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;";
+    document.body.append(ta); ta.select(); ta.setSelectionRange(0, text.length);
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch (_) {}
+    ta.remove();
+    return ok;
+  }
+}
+
+async function copyReminder(c) {
+  const text = "Hello " + c.name + ", this is Padel Nation. Your balance with us is " + kd(balanceOf(c.id)) + " KD. Thank you!";
+  toast((await copyText(text)) ? "Reminder for " + c.name + " copied" : "Couldn't copy on this device");
 }
 
 function handleWriteError(err) {
@@ -2371,6 +2747,16 @@ $("reloadApp").onclick = async () => {
 $("setAdd").onclick = () => { draft.push({ name: "", prices: [""], noQty: false, perPrice: false }); renderSettings(); const rows = $("setList").querySelectorAll(".set-row"); rows[rows.length - 1].querySelector("input").focus(); };
 for (const b of document.querySelectorAll("[data-hint]")) b.onclick = () => { try { localStorage.setItem("hint-" + b.dataset.hint, "1"); } catch (_) {} renderHints(); };
 $("splitPop").onclick = ev => { if (ev.target === $("splitPop")) closeSplit(); };
+$("crGive").onclick = () => { popButton($("crGive")); openGive(null); };
+$("crCancel").onclick = closeGive;
+$("crSave").onclick = saveGive;
+$("crPop").onclick = ev => { if (ev.target === $("crPop")) closeGive(); };
+$("crNew").oninput = () => { if (crDraft && crDraft.customer && $("crNew").value.trim()) { crDraft.customer = null; renderGive(); } };
+$("crAmt").oninput = () => { if (crDraft) renderGive(); };
+$("payForm").onsubmit = savePay;
+$("payCancel").onclick = closePay;
+$("payPop").onclick = ev => { if (ev.target === $("payPop")) closePay(); };
+$("payFull").onclick = () => { $("payAmt").value = kd(balanceOf(payFor)); $("payErr").textContent = ""; };
 
 // After midnight, move a page that was showing "today" on to the new day.
 // If someone is typing in a cell, wait until they finish so the sale lands on the right day.
@@ -2428,6 +2814,7 @@ render();
       render();
     }
   }, () => {});
+  if (CREDIT) watchCredit();
   watchDay();
 })();
 </script>
