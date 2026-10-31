@@ -278,7 +278,7 @@ table.sheet { border-collapse: collapse; width: 100%; font-size: 15px; }
 .sheet input.amt { display: block; width: 100%; min-width: 84px; height: 40px; border: 0; background: transparent; text-align: right; padding: 0 8px; border-radius: 0; font-variant-numeric: tabular-nums; }
 .sheet input.amt:focus { outline: 2px solid var(--accent); outline-offset: -2px; background: rgba(240,122,44,.14); }
 .sheet input.amt.bad { outline: 2px solid var(--warn); outline-offset: -2px; }
-.sheet td.cell { position: relative; }
+.sheet .cellbox { position: relative; }
 .sheet .cellx {
   position: absolute; left: 3px; top: 50%; width: 26px; height: 26px; margin-top: -13px; padding: 0;
   border: 0; border-radius: 50%; background: rgba(255,255,255,.08); color: var(--muted);
@@ -286,8 +286,8 @@ table.sheet { border-collapse: collapse; width: 100%; font-size: 15px; }
   opacity: 0; pointer-events: none; transform: scale(.7);
   transition: opacity .2s ease, transform .25s cubic-bezier(.34,1.56,.64,1), background-color .2s, color .2s;
 }
-@media (hover: hover) { .sheet td.filled:hover .cellx { opacity: .45; pointer-events: auto; transform: scale(1); } }
-.sheet td.filled:focus-within .cellx { opacity: .8; pointer-events: auto; transform: scale(1); }
+@media (hover: hover) { .sheet .cellbox.filled:hover .cellx { opacity: .45; pointer-events: auto; transform: scale(1); } }
+.sheet .cellbox.filled:focus-within .cellx { opacity: .8; pointer-events: auto; transform: scale(1); }
 .sheet .cellx:hover, .sheet .cellx:active { opacity: 1; background: rgba(255, 80, 64, .45); color: #fff; }
 .sheet td.chk { width: 72px; min-width: 72px; text-align: center; vertical-align: middle; white-space: nowrap; }
 /* Cash drawer section, kept apart from the table: previous cash (carried over), cash payments,
@@ -418,7 +418,7 @@ table.btable { border-collapse: collapse; width: 100%; font-size: 14px; }
 .bcell { display: flex; align-items: center; justify-content: flex-end; gap: 6px; width: 100%; min-width: 96px; height: 44px; padding: 0 10px; border: 0; background: transparent; color: var(--ink); font: inherit; font-variant-numeric: tabular-nums; touch-action: manipulation; }
 .bcell:hover { background: rgba(255,255,255,.06); }
 .bcell:active { background: rgba(240,122,44,.18); }
-.btable td.bc { position: relative; }
+.bcbox { position: relative; }
 .bx {
   position: absolute; z-index: 1; left: 4px; top: 50%; width: 26px; height: 26px; margin-top: -13px; padding: 0;
   border: 0; border-radius: 50%; background: rgba(255,255,255,.08); color: var(--muted);
@@ -427,7 +427,7 @@ table.btable { border-collapse: collapse; width: 100%; font-size: 14px; }
 }
 @media (hover: hover) {
   .bx { opacity: 0; transform: scale(.7); }
-  .btable td.bc.has:hover .bx { opacity: .5; transform: scale(1); }
+  .bcbox.has:hover .bx { opacity: .5; transform: scale(1); }
 }
 .bx:hover, .bx:active { opacity: 1; background: rgba(255, 80, 64, .45); color: #fff; }
 .bcell .plus { color: var(--muted); opacity: .35; font-size: 1.1rem; }
@@ -1080,7 +1080,12 @@ function buildSheet(rows) {
         const e = itemRows().find(en => en.id === inp.dataset.id);
         if (e && editable) e.group ? removeGroup(e, inp) : removeSale(e, inp);
       });
-      td.append(inp, x);
+      // The amount and its × share one small box, so the × lines up the same in every browser
+      // (iPad Safari measures positions inside table cells differently).
+      const box = document.createElement("div");
+      box.className = "cellbox";
+      box.append(inp, x);
+      td.append(box);
       const ctd = tr.insertCell(); ctd.className = "chk";
       const cb = document.createElement("input");
       cb.type = "checkbox"; cb.id = "p-" + c + "-" + r;
@@ -1709,15 +1714,17 @@ function bookingCard(b) {
         if (list.some(e => !e.paid)) btn.classList.add("unpaid");
       } else btn.append(mk("span", "plus", "+"));
       btn.onclick = () => openPick(b, p, prod);
-      td.className = "bc" + (list.length && editable ? " has" : "");
-      td.append(btn);
+      td.className = "bc";
+      const box = mk("div", "bcbox" + (list.length && editable ? " has" : ""));
+      box.append(btn);
+      td.append(box);
       if (list.length && editable) {
         // Small delete mark, like the Items table: faint on touch screens, shown on hover with a mouse.
         const x = mk("button", "bx", "×");
         x.type = "button";
         x.setAttribute("aria-label", "Remove " + prod + " for Player " + (p + 1));
         x.onclick = ev => { ev.stopPropagation(); removeCell(b, p, prod); };
-        td.append(x);
+        box.append(x);
       }
     }
     tr.append(mk("td", "itot", rowSum ? kd(rowSum) : "–"));
