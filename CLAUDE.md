@@ -32,8 +32,13 @@ composite indexes are needed.
 - Every delete asks first and offers Undo.
 - Test layout at phone and iPad widths before publishing (rules in the "Fitting every phone and tablet" CSS block).
 
+## Demo mode
+`index.html?demo` loads `demo.js` instead of `firebase.js`: same database API, in memory, with made-up sample
+data (today + yesterday), no login, nothing saved, reload resets. Share this link with testers.
+
 ## Daily report
-The "Daily report" button opens a preview of the WhatsApp-format message with "Copy message" and
+The "Daily report" button opens a preview of the styled WhatsApp message (*bold*, _italic_, ``` block with
+aligned amounts; same content as the owner's: each item, TOTAL, "I have Cash") with "Copy message" and
 "Open WhatsApp". The company iPad can't install WhatsApp, so Copy is the main way to send it.
 (A nightly Telegram robot was built and then removed at the owner's request; don't bring it back unasked.)
 

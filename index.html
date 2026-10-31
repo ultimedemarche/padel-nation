@@ -29,7 +29,16 @@ window.claude = {
     : Promise.resolve(null)
 };
 </script>
-<script type="module" src="firebase.js"></script>
+<script>
+// ?demo opens a practice copy with sample data that is never saved; otherwise connect to Firebase.
+(() => {
+  const demo = new URLSearchParams(location.search).has("demo");
+  const s = document.createElement("script");
+  s.type = "module";
+  s.src = demo ? "demo.js" : "firebase.js";
+  document.head.append(s);
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&display=swap">
@@ -335,7 +344,8 @@ table.sheet { border-collapse: collapse; width: 100%; font-size: 15px; }
 .wa svg { width: 24px; height: 24px; fill: #ffffff; flex: none; filter: drop-shadow(0 1px 2px rgba(0,0,0,.3)); }
 @media (hover: hover) { .wa:hover { border-radius: 26px 10px 26px 10px; transform: translateY(-2px); box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 10px 26px rgba(37,211,102,.35); } }
 .wa:active { transform: scale(.94); }
-.rep-text { text-align: left; margin: 0; padding: 14px 16px; border-radius: 16px; background: #0b3d2c; border: 1px solid rgba(120,255,170,.25); color: #eafff3; font-family: var(--font); font-size: .95rem; line-height: 1.5; white-space: pre-wrap; max-height: 50vh; overflow-y: auto; }
+.rep-text { text-align: left; margin: 0; padding: 14px 16px; border-radius: 16px 16px 16px 4px; background: #0b3d2c; border: 1px solid rgba(120,255,170,.25); color: #eafff3; font-family: var(--font); font-size: .95rem; line-height: 1.5; max-height: 50vh; overflow: auto; }
+.rep-text pre { margin: 6px 0; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .85rem; line-height: 1.45; white-space: pre; }
 .rep-copy { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; border-radius: 999px; color: #04120c; font-weight: 700; font-size: 1rem; background: linear-gradient(135deg, #5cf09a, #25d366); border-color: transparent; }
 .rep-copy svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
 .rep-copy.done { background: linear-gradient(135deg, #b8ffe0, #7dffb6); }
@@ -485,6 +495,7 @@ table.btable { border-collapse: collapse; width: 100%; font-size: 14px; }
 .login-card input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 .login-card .mbtn { margin-top: 10px; min-height: 50px; border-radius: 999px; font-size: 1rem; color: #04120c; background: linear-gradient(120deg, var(--aur-green), var(--aur-teal)); border-color: transparent; }
 .login-err { margin: 0; min-height: 1.2em; text-align: center; color: var(--warn); font-size: .88rem; }
+.demo-banner { position: relative; z-index: 6; margin: 10px auto 0; width: fit-content; max-width: calc(100% - 32px); padding: 8px 16px; border-radius: 999px; text-align: center; font-size: .85rem; color: #2b1a00; background: linear-gradient(135deg, #ffd34d, #ffae2b); box-shadow: 0 6px 18px rgba(255,174,43,.35); }
 .signfoot { position: relative; z-index: 1; display: flex; justify-content: center; align-items: center; gap: 10px; padding: 0 16px 28px; color: var(--muted); font-size: .8rem; }
 .signfoot[hidden] { display: none; }
 
@@ -693,7 +704,7 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   <div class="confirm-card pick glass" role="dialog" aria-modal="true" aria-labelledby="repTitle">
     <h2 id="repTitle">Daily report</h2>
     <p id="repSub"></p>
-    <pre class="rep-text num" id="repText"></pre>
+    <div class="rep-text num" id="repText"></div>
     <button class="mbtn rep-copy" id="repCopy" type="button">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
       <span id="repCopyLabel">Copy message</span>
@@ -1073,22 +1084,45 @@ async function removeCashOut(o) {
 // null while the carry-over is still being worked out.
 function drawerNow() {
   if (prevCash == null && !carry) return null;
-  const pay = itemRows().filter(r => r.cash).reduce((s, r) => s + r.amount, 0);
+  const pay = entries.filter(e => e.cash).reduce((s, e) => s + e.amount, 0);
   const out = cashouts.reduce((s, o) => s + o.amount, 0);
   return r3(effectivePrev() + pay - out);
 }
 
 // ---- WhatsApp daily report, in the same words as the message sent by hand ----
 const REPORT_NAMES = { Gatorade: "Gatorades", Racket: "Rackets", Grip: "Grips", "Protein Bar": "Protein Bars" };
-const plain = n => String(parseFloat(r3(n).toFixed(3)));
+
+// Styled with WhatsApp's own formatting: *bold*, _italic_, and a ``` block where the amounts
+// line up in a column. Same content as the owner's hand-written message: each item, Total, Cash.
+const COL = 20;
+const repRow = (label, amount) => { const a = kd(amount); return label + " ".repeat(Math.max(1, COL - label.length - a.length)) + a; };
 
 function reportText() {
   const t = totals();
-  const lines = [parseIso(day).toLocaleDateString("en-US", { month: "long", day: "numeric" }), "", "Account", ""];
-  for (const n of productNames()) lines.push("For " + (REPORT_NAMES[n] || n) + " - " + plain((t.by[n] || {}).total || 0));
   const cash = drawerNow();
-  lines.push("", "Total - " + plain(t.final), "", "I have Cash - " + (cash == null ? "…" : plain(cash)));
-  return lines.join("\n");
+  const rows = productNames().map(n => repRow(REPORT_NAMES[n] || n, (t.by[n] || {}).total || 0));
+  return [
+    "🎾 *PADEL NATION*",
+    "📅 _" + longDate(day) + "_",
+    "",
+    "📊 *Account*",
+    "```",
+    ...rows,
+    "─".repeat(COL),
+    repRow("TOTAL", t.final),
+    "```",
+    "",
+    "💵 *I have Cash: " + (cash == null ? "…" : kd(cash)) + " KD*"
+  ].join("\n");
+}
+
+// Shows the message the way WhatsApp will display it (bold, italic, monospace block).
+function whatsappHtml(text) {
+  const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return text.split("```").map((part, i) => i % 2
+    ? "<pre>" + esc(part.replace(/^\n|\n$/g, "")) + "</pre>"
+    : esc(part).replace(/\*([^*\n]+)\*/g, "<b>$1</b>").replace(/_([^_\n]+)_/g, "<i>$1</i>").replace(/\n/g, "<br>")
+  ).join("");
 }
 
 let reportOpen = false;
@@ -1105,7 +1139,8 @@ function closeReport() { reportOpen = false; $("reportPop").hidden = true; }
 function renderReport() {
   const ready = loaded && drawerNow() != null;
   $("repSub").textContent = longDate(day);
-  $("repText").textContent = ready ? reportText() : "Getting the day's numbers ready…";
+  if (ready) $("repText").innerHTML = whatsappHtml(reportText());
+  else $("repText").textContent = "Getting the day's numbers ready…";
   const send = $("repSend");
   send.href = ready ? "https://wa.me/?text=" + encodeURIComponent(reportText()) : "https://wa.me/";
   send.classList.toggle("wait", !ready);
@@ -1120,11 +1155,12 @@ async function copyReport() {
   let ok = false;
   try { await navigator.clipboard.writeText(text); ok = true; }
   catch (_) {
-    // Older browsers: select the preview text so the system Copy menu can take it.
-    const range = document.createRange();
-    range.selectNodeContents($("repText"));
-    const sel = getSelection(); sel.removeAllRanges(); sel.addRange(range);
+    // Older browsers: copy through a hidden text box so the *bold* and ``` marks come along.
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;";
+    document.body.append(ta); ta.select(); ta.setSelectionRange(0, text.length);
     try { ok = document.execCommand("copy"); } catch (_) {}
+    ta.remove();
   }
   popButton(btn);
   btn.classList.toggle("done", ok);
@@ -1136,7 +1172,8 @@ async function copyReport() {
 // Cash counter below the Items table.
 function renderCashCounter() {
   const editable = canEditNow();
-  const rows = itemRows().filter(r => r.cash);
+  // Count each sale (each player's share) on its own, so one player paying cash in a shared court counts.
+  const rows = entries.filter(e => e.cash);
   const total = r3(rows.reduce((s, r) => s + r.amount, 0));
   const outTotal = r3(cashouts.reduce((s, o) => s + o.amount, 0));
   const prevVal = effectivePrev();
