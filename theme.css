@@ -222,7 +222,16 @@ header.top .bar { background: radial-gradient(120% 160% at 0% 0%, rgba(240, 122,
     linear-gradient(180deg, rgba(3, 6, 11, .45) 0%, rgba(3, 6, 11, .25) 40%, rgba(3, 6, 11, .62) 100%);
 }
 
-/* ---- Customer credit (Credit tab, demo only for now) ---- */
+/* ---- Customer credit (section at the bottom of the page, demo only for now) ---- */
+.credit-sec { margin-top: 28px; }
+.cr-unpaid { margin-top: 14px; border-radius: 22px; padding: 14px; display: grid; gap: 10px; }
+.cr-unpaid-head { font-family: var(--font-btn); font-weight: 700; color: var(--orange-soft); }
+.cr-unpaid li { gap: 10px; }
+.cr-unpaid .meta { font-size: .88rem; color: var(--ink); min-width: 0; overflow-wrap: anywhere; }
+.cr-unpaid .amt { white-space: nowrap; }
+.cr-add { min-height: 38px; padding: 0 14px; border-radius: 12px; font-size: .85rem; white-space: nowrap; }
+.cr-sale { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 16px; background: rgba(240, 122, 44, .16); border: 1px solid rgba(240, 122, 44, .45); }
+.cr-sale b { font-size: 1.1rem; white-space: nowrap; }
 .cr-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; margin-top: 14px; }
 .crc { border-radius: 24px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
 .crc-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -252,8 +261,6 @@ header.top .bar { background: radial-gradient(120% 160% at 0% 0%, rgba(240, 122,
 .cellbox.credit::after { content: ""; position: absolute; left: 4px; top: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--orange); pointer-events: none; }
 .psw.credit .knob { background: linear-gradient(120deg, var(--orange), var(--orange-deep)); }
 .psw.credit .pswl { color: var(--orange-soft); }
-/* Four tabs (with Credit) on a narrow phone. */
-@media (max-width: 420px) { .tab { padding: 0 6px; gap: 5px; } }
 /* Credit popups: one column that never grows wider than the screen. */
 #crPop .confirm-card, #payForm { grid-template-columns: minmax(0, 1fr); }
 #crPop .set-sec { text-align: left; margin-top: 4px; }

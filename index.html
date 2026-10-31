@@ -689,7 +689,6 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
       <button class="tab" role="tab" data-tab="court1" id="tab-court1">Court 1<span class="tcount num" id="tabCount1"></span></button>
       <button class="tab" role="tab" data-tab="court2" id="tab-court2">Court 2<span class="tcount num" id="tabCount2"></span></button>
       <button class="tab" role="tab" data-tab="items" id="tab-items">Items</button>
-      <button class="tab" role="tab" data-tab="credit" id="tab-credit" hidden>Credit<span class="tcount num" id="tabCountCr"></span></button>
     </nav>
     <div class="tools">
     <div class="sync glass" id="sync" role="status" aria-live="polite"><span class="dot"></span><span id="syncText">Connecting…</span></div>
@@ -721,20 +720,6 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
         </div>
       </div>
       <div class="bookings" id="bookings"></div>
-    </section>
-
-    <section class="sheet-block" id="creditView" hidden>
-      <div class="court-head">
-        <div class="court-intro">
-          <h2 class="sec-title">Credit</h2>
-          <p class="sheet-hint">Customers who play now and pay later. Only the owner can put sales on credit; anyone can record a payment.</p>
-        </div>
-        <div class="court-actions">
-          <span class="court-total num" id="crOwed">0.000 KD</span>
-          <button class="mbtn newb" id="crGive" type="button">+ Put on credit</button>
-        </div>
-      </div>
-      <div class="cr-list" id="crList"></div>
     </section>
 
     <div class="view" id="itemsView">
@@ -796,6 +781,24 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
       </div>
     </section>
     </div>
+
+    <section class="sheet-block credit-sec" id="creditView" hidden aria-labelledby="crHead">
+      <div class="court-head">
+        <div class="court-intro">
+          <h2 class="sec-title" id="crHead">Credit</h2>
+          <p class="sheet-hint">Customers who play now and pay later. Only the owner can add credit; anyone can record a payment.</p>
+        </div>
+        <div class="court-actions">
+          <span class="court-total num" id="crOwed">0.000 KD</span>
+          <button class="mbtn newb" id="crGive" type="button">+ Add credit</button>
+        </div>
+      </div>
+      <div class="cr-unpaid glass" id="crUnpaid" hidden>
+        <div class="cr-unpaid-head" id="crUnpaidHead">Not paid yet</div>
+        <ul class="pick-list num" id="crUnpaidList"></ul>
+      </div>
+      <div class="cr-list" id="crList"></div>
+    </section>
   </div>
 </main>
 
@@ -894,17 +897,18 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
 <div class="confirm pop" id="crPop" hidden>
   <div class="confirm-card pick glass" role="dialog" aria-modal="true" aria-labelledby="crTitle">
-    <h2 id="crTitle">Put on credit</h2>
+    <h2 id="crTitle">Add to credit?</h2>
     <p id="crSub"></p>
-    <h3 class="set-sec">Customer</h3>
+    <div class="cr-sale num" id="crSale" hidden></div>
+    <h3 class="set-sec">Customer name</h3>
     <div class="split-n cr-who" id="crWho" role="group" aria-label="Customer"></div>
-    <div class="pick-other"><input id="crNew" type="text" autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="New customer name" aria-label="New customer name"></div>
-    <h3 class="set-sec">Unpaid sales</h3>
-    <ul class="pick-list cr-sales num" id="crSales"></ul>
-    <h3 class="set-sec">Or an amount by hand</h3>
-    <div class="pick-other">
-      <input id="crAmt" type="text" inputmode="decimal" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="Amount KD" aria-label="Amount on credit in KD">
-      <input id="crNote" type="text" autocomplete="off" autocapitalize="sentences" enterkeyhint="done" placeholder="What for? (optional)" aria-label="What the credit was for">
+    <div class="pick-other"><input id="crNew" type="text" autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="Customer name" aria-label="Customer name"></div>
+    <div id="crHand">
+      <h3 class="set-sec">Amount</h3>
+      <div class="pick-other">
+        <input id="crAmt" type="text" inputmode="decimal" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="Amount KD" aria-label="Amount on credit in KD">
+        <input id="crNote" type="text" autocomplete="off" autocapitalize="sentences" enterkeyhint="done" placeholder="What for? (optional)" aria-label="What the credit was for">
+      </div>
     </div>
     <p class="pin-err" id="crErr" role="alert"></p>
     <div class="confirm-actions">
@@ -1009,7 +1013,7 @@ let split = null;
 let focusBid = null;
 let tab = "items";
 try { tab = localStorage.getItem("tab") || "items"; } catch (_) {}
-if (!["court1", "court2", "items", ...(CREDIT ? ["credit"] : [])].includes(tab)) tab = "items";
+if (!["court1", "court2", "items"].includes(tab)) tab = "items";
 const PLAYERS = 4;
 
 const $ = id => document.getElementById(id);
@@ -1688,7 +1692,6 @@ function renderTabs() {
   }
   $("itemsView").hidden = tab !== "items";
   $("courtView").hidden = !courtOf(tab);
-  $("creditView").hidden = tab !== "credit";
   for (const n of [1, 2]) {
     const c = bookings.filter(b => b.court === n).length;
     $("tabCount" + n).textContent = c ? c : "";
@@ -2323,7 +2326,7 @@ const shortDate = s => parseIso(s).toLocaleDateString("en-GB", { day: "numeric",
 function onCredit(list) {
   const e = list.find(x => x.credit);
   if (!e) return false;
-  toast("On credit for " + creditName(e) + ". Change it in the Credit tab.");
+  toast("On credit for " + creditName(e) + ". Change it in the Credit section at the bottom.");
   return true;
 }
 
@@ -2355,20 +2358,34 @@ function creditLines() {
 
 function renderCredit() {
   const on = CREDIT && !!db;
-  $("tab-credit").hidden = !on;
+  $("creditView").hidden = !on;
   if (!on) return;
   const owing = customers.filter(c => balanceOf(c.id) > 0);
-  $("tabCountCr").textContent = owing.length || "";
-  if (tab !== "credit") return;
   const editable = canEditNow();
   countTo($("crOwed"), owing.reduce((s, c) => s + balanceOf(c.id), 0), n => "Owed " + kd(n) + " KD");
   $("crGive").disabled = !editable;
+
+  // Sales of the day nobody has paid yet, each with its own "Add to credit".
+  const unpaid = creditCandidates();
+  $("crUnpaid").hidden = !unpaid.length;
+  $("crUnpaidHead").textContent = "Not paid yet · " + unpaid.length;
+  const ul0 = $("crUnpaidList");
+  ul0.textContent = "";
+  for (const c of unpaid) {
+    const li = mk("li");
+    li.append(mk("span", "meta", c.label), mk("span", "amt", kd(c.amount)));
+    const add = mk("button", "mbtn cr-add", "Add to credit");
+    add.type = "button"; add.disabled = !editable;
+    add.onclick = () => { popButton(add); openGive(null, c.key); };
+    li.append(add);
+    ul0.append(li);
+  }
 
   const box = $("crList");
   const open = new Set([...box.querySelectorAll("details[open]")].map(d => d.dataset.cid));
   box.textContent = "";
   if (!customers.length) {
-    box.append(mk("div", "empty glass", creditLoaded ? "No credit customers yet. Tap “+ Put on credit” to add the first one." : "Loading…"));
+    box.append(mk("div", "empty glass", creditLoaded ? "No credit customers yet." : "Loading…"));
     return;
   }
   const list = [...customers].sort((a, b) => (balanceOf(b.id) > 0) - (balanceOf(a.id) > 0) || a.name.localeCompare(b.name));
@@ -2441,19 +2458,28 @@ function creditCandidates() {
   return out;
 }
 
-async function openGive(customerId) {
+// Add to credit: one unpaid sale (saleKey), or an amount typed by hand. Asks for the customer's name.
+async function openGive(customerId, saleKey) {
   if (!canEditNow()) return;
-  if (!(await ownerCheck("Put on credit", "Only the owner can give credit. Enter the owner PIN."))) return;
-  crDraft = { customer: customerId || null, picked: new Set() };
+  if (!(await ownerCheck("Add to credit", "Only the owner can give credit. Enter the owner PIN."))) return;
+  crDraft = { customer: customerId || null, sale: saleKey || null };
   $("crNew").value = $("crAmt").value = $("crNote").value = "";
   $("crErr").textContent = "";
   $("crPop").hidden = false;
   renderGive();
+  if (!customers.length) setTimeout(() => $("crNew").focus(), 50);
 }
 function closeGive() { crDraft = null; $("crPop").hidden = true; }
 
 function renderGive() {
+  const sale = crDraft.sale ? creditCandidates().find(c => c.key === crDraft.sale) : null;
+  // The sale was paid or removed meanwhile.
+  if (crDraft.sale && !sale) { closeGive(); return; }
+  $("crTitle").textContent = sale ? "Add to credit?" : "Add credit";
   $("crSub").textContent = longDate(day);
+  $("crSale").hidden = !sale;
+  if (sale) { $("crSale").textContent = ""; $("crSale").append(mk("span", "", sale.label), mk("b", "", kd(sale.amount) + " KD")); }
+  $("crHand").hidden = !!sale;
   const whoBox = $("crWho");
   whoBox.textContent = "";
   for (const c of customers) {
@@ -2461,61 +2487,41 @@ function renderGive() {
     const b = mk("button", on ? "on" : "", c.name);
     b.type = "button";
     b.setAttribute("aria-pressed", on ? "true" : "false");
-    b.onclick = () => { crDraft.customer = on ? null : c.id; $("crNew").value = ""; renderGive(); };
+    b.onclick = () => { crDraft.customer = on ? null : c.id; $("crNew").value = ""; $("crErr").textContent = ""; renderGive(); };
     whoBox.append(b);
   }
   whoBox.hidden = !customers.length;
-  $("crNew").placeholder = customers.length ? "Or a new customer's name" : "Customer's name";
-
-  const cands = creditCandidates();
-  for (const k of [...crDraft.picked]) if (!cands.some(c => c.key === k)) crDraft.picked.delete(k);
-  const ul = $("crSales");
-  ul.textContent = "";
-  if (!cands.length) ul.append(mk("li", "none", "No unpaid sales on this day"));
-  for (const c of cands) {
-    const li = mk("li", "crs" + (crDraft.picked.has(c.key) ? " on" : ""));
-    const lab = mk("label");
-    const cb = mk("input"); cb.type = "checkbox"; cb.checked = crDraft.picked.has(c.key);
-    cb.onchange = () => { cb.checked ? crDraft.picked.add(c.key) : crDraft.picked.delete(c.key); renderGive(); };
-    lab.append(cb, mk("span", "meta", c.label), mk("span", "amt", kd(c.amount)));
-    li.append(lab);
-    ul.append(li);
-  }
-  const total = r3(cands.filter(c => crDraft.picked.has(c.key)).reduce((s, c) => s + c.amount, 0) + (parseFloat($("crAmt").value.replace(",", ".")) || 0));
-  $("crSave").textContent = total > 0 ? "Put " + kd(total) + " KD on credit" : "Put on credit";
+  $("crNew").placeholder = customers.length ? "Or type a new customer's name" : "Customer name";
+  const amount = sale ? sale.amount : parseFloat($("crAmt").value.replace(",", ".")) || 0;
+  $("crSave").textContent = amount > 0 ? "Add " + kd(amount) + " KD to credit" : "Add to credit";
 }
 
 async function saveGive() {
   const err = $("crErr");
-  const picked = creditCandidates().filter(c => crDraft.picked.has(c.key));
-  const raw = $("crAmt").value.trim().replace(",", ".");
-  const hand = raw ? parseFloat(raw) : 0;
-  if (raw && !(hand > 0)) { err.textContent = "Type the amount as a number, like 5.000."; return; }
-  if (!picked.length && !hand) { err.textContent = "Tick a sale, or type an amount."; return; }
+  const sale = crDraft.sale ? creditCandidates().find(c => c.key === crDraft.sale) : null;
+  const hand = sale ? 0 : parseFloat($("crAmt").value.trim().replace(",", "."));
+  if (!sale && !(hand > 0)) { err.textContent = "Type the amount, like 5.000."; $("crAmt").focus(); return; }
   const newName = $("crNew").value.trim().replace(/\s+/g, " ").slice(0, 40);
   let cid = crDraft.customer;
-  if (!cid && !newName) { err.textContent = "Choose the customer, or type a new name."; return; }
+  if (!cid && !newName) { err.textContent = "Type the customer's name."; $("crNew").focus(); return; }
   if (!canEditNow()) return;
   try {
     if (!cid) {
       const same = customers.find(c => c.name.toLowerCase() === newName.toLowerCase());
       cid = same ? same.id : (await db.collection("customers").add({ name: newName, at: Date.now(), by: me() })).id;
     }
-    const list = picked.flatMap(c => c.list);
-    let total = 0;
-    if (list.length) {
-      const amount = r3(list.reduce((s, e) => s + e.amount, 0));
-      const ref = await db.collection("credit").add({ customer: cid, kind: "took", date: day, amount, entries: list.map(e => e.id), items: picked.map(c => c.label), at: Date.now(), by: me() });
-      for (const e of list) await db.collection("entries").doc(e.id).update({ paid: true, cash: false, credit: ref.id });
-      total += amount;
-    }
-    if (hand) {
-      await db.collection("credit").add({ customer: cid, kind: "took", date: day, amount: r3(hand), note: $("crNote").value.trim().slice(0, 80), at: Date.now() + 1, by: me() });
-      total += hand;
+    let total;
+    if (sale) {
+      total = sale.amount;
+      const ref = await db.collection("credit").add({ customer: cid, kind: "took", date: day, amount: total, entries: sale.list.map(e => e.id), items: [sale.label], at: Date.now(), by: me() });
+      for (const e of sale.list) await db.collection("entries").doc(e.id).update({ paid: true, cash: false, credit: ref.id });
+    } else {
+      total = r3(hand);
+      await db.collection("credit").add({ customer: cid, kind: "took", date: day, amount: total, note: $("crNote").value.trim().slice(0, 80), at: Date.now(), by: me() });
     }
     const name = customers.find(c => c.id === cid) ? crName(cid) : newName;
     closeGive();
-    toast(kd(total) + " KD put on credit for " + name);
+    toast(kd(total) + " KD added to credit for " + name);
   } catch (e) { handleWriteError(e); }
 }
 

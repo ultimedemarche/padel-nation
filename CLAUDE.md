@@ -37,7 +37,8 @@ composite indexes are needed.
 
 ## Customer credit (TEST: on only with ?demo)
 `const CREDIT` in index.html switches it on; it is true only in the demo until the owner approves it for the
-real app (then set it to `true`). Credit tab: customers + balances + history, "Put on credit" (owner PIN),
+real app (then set it to `true`). Credit section at the bottom of every tab (not a tab): "Not paid yet" list with
+Add to credit per sale (asks the customer name), "+ Add credit" for a typed amount (owner PIN for both),
 Payment (anyone, all or part, cash goes into Cash in drawer and `days/<date>.cashIn`), Copy reminder.
 The WhatsApp report gets a "📒 Credit" block only on days credit was given or paid back.
 
