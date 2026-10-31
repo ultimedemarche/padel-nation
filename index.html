@@ -1237,8 +1237,10 @@ function render() {
   $("brand").firstChild.nodeValue = cfg.business;
   $("dayLabel").textContent = longDate(day) + (day === iso(new Date()) ? " · Today" : "");
   $("dayPick").value = day;
-  countTo($("sFinal"), t.final);
-  countTo($("sPaid"), t.paid);
+  // Credit paid back today counts as money in, so it is part of the day's total (and the report TOTAL).
+  const cp = creditPaid();
+  countTo($("sFinal"), t.final + cp);
+  countTo($("sPaid"), t.paid + cp);
   countTo($("sUnpaid"), t.unpaid);
   countTo($("sCount"), itemRows().length, n => String(Math.round(n)));
   renderLock();
@@ -1367,6 +1369,8 @@ function reportText() {
   const t = totals();
   const cash = drawerNow();
   const rows = productNames().map(n => repRow(REPORT_NAMES[n] || n, (t.by[n] || {}).total || 0));
+  const cp = creditPaid();
+  if (cp) rows.push(repRow("Credit paid", cp));
   return [
     "📅 _" + longDate(day) + "_",
     "",
@@ -1374,7 +1378,7 @@ function reportText() {
     "```",
     ...rows,
     "─".repeat(COL),
-    repRow("TOTAL", t.final),
+    repRow("TOTAL", t.final + cp),
     "```",
     "",
     "💵 *I have Cash: " + (cash == null ? "…" : kd(cash)) + " KD*",
@@ -2324,6 +2328,8 @@ const creditName = e => { const r = credits.find(x => x.id === e.credit); return
 // What a customer owes, counting everything up to the end of a day (or everything).
 const balanceOf = (id, upTo) => r3(credits.filter(r => r.customer === id && (!upTo || r.date <= upTo))
   .reduce((s, r) => s + (r.kind === "paid" ? -r.amount : r.amount), 0));
+// Everything customers paid back on the day shown (cash or not).
+const creditPaid = () => r3(credits.filter(r => r.kind === "paid" && r.date === day).reduce((s, r) => s + r.amount, 0));
 const creditCash = () => credits.filter(r => r.kind === "paid" && r.cash && r.date === day).reduce((s, r) => s + r.amount, 0);
 const shortDate = s => parseIso(s).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 
