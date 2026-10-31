@@ -43,7 +43,7 @@
     b.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     const base = b.createLinearGradient(0, 0, 0, h);
-    base.addColorStop(0, "#05080f"); base.addColorStop(1, "#0a1220");
+    base.addColorStop(0, "#020408"); base.addColorStop(1, "#050a12");
     b.fillStyle = base; b.fillRect(0, 0, w, h);
 
     const glow = (x, y, r, rgb, a) => {
@@ -51,21 +51,21 @@
       g.addColorStop(0, `rgba(${rgb},${a})`); g.addColorStop(1, `rgba(${rgb},0)`);
       b.fillStyle = g; b.fillRect(0, 0, w, h);
     };
-    glow(w * 0.05, h * 0.95, Math.max(w, h) * 0.6, "240,122,44", 0.22);   // orange, bottom left
-    glow(w * 0.95, h * 0.05, Math.max(w, h) * 0.5, "181,211,52", 0.10);   // lime, top right
-    glow(w * 0.5, h * 0.55, Math.max(w, h) * 0.5, "35,58,85", 0.35);      // navy, centre
+    glow(w * 0.05, h * 0.95, Math.max(w, h) * 0.55, "240,122,44", 0.13);  // orange, bottom left
+    glow(w * 0.95, h * 0.05, Math.max(w, h) * 0.45, "181,211,52", 0.06);  // lime, top right
+    glow(w * 0.5, h * 0.55, Math.max(w, h) * 0.5, "35,58,85", 0.22);      // navy, centre
 
     // Court surface.
     const c = [project(-5, 0), project(5, 0), project(5, 20), project(-5, 20)];
     const surf = b.createLinearGradient(0, c[2].y, 0, c[0].y);
-    surf.addColorStop(0, "rgba(35,58,85,0.10)"); surf.addColorStop(1, "rgba(35,58,85,0.32)");
+    surf.addColorStop(0, "rgba(35,58,85,0.06)"); surf.addColorStop(1, "rgba(35,58,85,0.2)");
     b.fillStyle = surf;
     b.beginPath(); c.forEach((p, i) => i ? b.lineTo(p.x, p.y) : b.moveTo(p.x, p.y)); b.closePath(); b.fill();
 
     // Lines.
     const line = (x1, z1, x2, z2, a = 0.09) => {
       const p = project(x1, z1), q = project(x2, z2);
-      b.strokeStyle = `rgba(255,255,255,${a})`; b.lineWidth = 1.5;
+      b.strokeStyle = `rgba(255,255,255,${a * 0.75})`; b.lineWidth = 1.5;
       b.beginPath(); b.moveTo(p.x, p.y); b.lineTo(q.x, q.y); b.stroke();
     };
     line(-5, 0, 5, 0); line(-5, 20, 5, 20); line(-5, 0, -5, 20); line(5, 0, 5, 20);
