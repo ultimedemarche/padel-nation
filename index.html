@@ -325,6 +325,10 @@ table.sheet { border-collapse: collapse; width: 100%; font-size: 15px; }
 .cashb.on { opacity: 1; color: #04120c; border-color: transparent; background: linear-gradient(135deg, #7dffb6, #2fd47f); box-shadow: 0 0 12px rgba(61,220,132,.45); }
 .cashb:active:not(:disabled) { transform: scale(.88); }
 .cashb:disabled { opacity: .12; cursor: default; }
+.cashb.hid { visibility: hidden; }
+.paidbox { display: flex; align-items: center; justify-content: center; gap: 4px; }
+.paidbox .cashb { margin-left: 0; }
+.pick-list .cashb { margin-left: 0; }
 .sheet td.chk input { width: 22px; height: 22px; margin: 0; accent-color: var(--accent); cursor: pointer; vertical-align: middle; }
 .sheet td.chk input:disabled { opacity: .25; cursor: default; }
 .sheet tfoot th, .sheet tfoot td { color: #fff; padding: 10px 8px; text-align: right; font-weight: 600; border-color: rgba(255,255,255,.12); }
@@ -961,7 +965,9 @@ function renderSheet(t) {
       kb.dataset.id = e ? e.id : "";
       kb.classList.toggle("on", !!(e && e.cash));
       kb.setAttribute("aria-pressed", e && e.cash ? "true" : "false");
-      kb.disabled = !e || !canWrite;
+      // The cash note only appears once the sale is ticked Paid.
+      kb.disabled = !e || !canWrite || !e.paid;
+      kb.classList.toggle("hid", !(e && e.paid));
     }
     const p = t.by[n] || { total: 0, unpaid: 0, count: 0 };
     const cells = grid[n].filter(Boolean).length;
@@ -1008,7 +1014,7 @@ let outLoaded = false;
 let summaryWriting = "";
 function syncDaySummary() {
   if (!db || !loaded || !outLoaded || daySummary === undefined || !canWrite) return;
-  const cashIn = r3(entries.filter(e => e.cash).reduce((s, e) => s + e.amount, 0));
+  const cashIn = r3(entries.filter(e => e.cash && e.paid).reduce((s, e) => s + e.amount, 0));
   const cashOut = r3(cashouts.reduce((s, o) => s + o.amount, 0));
   const key = day + "|" + cashIn + "|" + cashOut;
   if (daySummary ? daySummary.cashIn === cashIn && daySummary.cashOut === cashOut : !cashIn && !cashOut) return;
@@ -1084,7 +1090,7 @@ async function removeCashOut(o) {
 // null while the carry-over is still being worked out.
 function drawerNow() {
   if (prevCash == null && !carry) return null;
-  const pay = entries.filter(e => e.cash).reduce((s, e) => s + e.amount, 0);
+  const pay = entries.filter(e => e.cash && e.paid).reduce((s, e) => s + e.amount, 0);
   const out = cashouts.reduce((s, o) => s + o.amount, 0);
   return r3(effectivePrev() + pay - out);
 }
@@ -1173,7 +1179,7 @@ async function copyReport() {
 function renderCashCounter() {
   const editable = canEditNow();
   // Count each sale (each player's share) on its own, so one player paying cash in a shared court counts.
-  const rows = entries.filter(e => e.cash);
+  const rows = entries.filter(e => e.cash && e.paid);
   const total = r3(rows.reduce((s, r) => s + r.amount, 0));
   const outTotal = r3(cashouts.reduce((s, o) => s + o.amount, 0));
   const prevVal = effectivePrev();
@@ -1350,7 +1356,14 @@ function bookingCard(b) {
     const btn = paidSwitch(all ? "on" : some ? "part" : "off", !editable || !list.length);
     btn.setAttribute("aria-label", "Player " + (p + 1) + " paid");
     btn.onclick = () => togglePlayerPaid(b, p);
-    td.append(btn);
+    // Cash note beside the switch, once the player has paid something.
+    const paidList = list.filter(e => e.paid);
+    const cb = cashButton(paidList.length && paidList.every(e => e.cash), "Player " + (p + 1) + " paid in cash", () => togglePlayerCash(b, p));
+    cb.disabled = !editable || !paidList.length;
+    cb.classList.toggle("hid", !paidList.length);
+    const wrapPaid = mk("div", "paidbox");
+    wrapPaid.append(btn, cb);
+    td.append(wrapPaid);
   }
   const left = mine.filter(e => !e.paid).reduce((s, e) => s + e.amount, 0);
   paidRow.append(mk("td", "", left > 0 ? "Owed " + kd(left) : mine.length ? "All paid" : ""));
@@ -1423,8 +1436,15 @@ async function removeCell(b, p, prod) {
 async function togglePlayerPaid(b, p) {
   const list = entries.filter(e => e.booking === b.id && e.player === p);
   if (!list.length) return;
-  const target = !list.every(e => e.paid);
-  try { for (const e of list) if (e.paid !== target) await db.collection("entries").doc(e.id).update({ paid: target }); }
+  try { await setPaid(list, !list.every(e => e.paid)); }
+  catch (err) { handleWriteError(err); }
+}
+
+// Marks everything a player has paid as cash (or takes the cash mark off again).
+async function togglePlayerCash(b, p) {
+  const paid = entries.filter(e => e.booking === b.id && e.player === p && e.paid);
+  if (!paid.length) return;
+  try { await setCash(paid, !paid.every(e => e.cash)); }
   catch (err) { handleWriteError(err); }
 }
 
@@ -1483,12 +1503,15 @@ function renderPick() {
     li.append(mk("span", "amt", kd(e.amount)), mk("span", "meta", e.qty > 1 ? e.qty + " × " + kd(e.unit) : e.split ? "court ÷ " + e.split : ""));
     const t = paidSwitch(e.paid ? "on" : "off", !editable);
     t.setAttribute("aria-label", kd(e.amount) + " KD paid");
-    t.onclick = async () => { try { await db.collection("entries").doc(e.id).update({ paid: !e.paid }); } catch (err) { handleWriteError(err); } };
+    t.onclick = async () => { try { await setPaid([e], !e.paid); } catch (err) { handleWriteError(err); } };
+    const cash = cashButton(!!e.cash, kd(e.amount) + " KD paid in cash", async () => { try { await setCash([e], !e.cash); } catch (err) { handleWriteError(err); } });
+    cash.disabled = !editable || !e.paid;
+    cash.classList.toggle("hid", !e.paid);
     const x = mk("button", "bdel", "×");
     x.setAttribute("aria-label", "Remove " + kd(e.amount) + " KD");
     x.disabled = !editable;
     x.onclick = () => removeSale(e);
-    li.append(t, x);
+    li.append(t, cash, x);
     ul.append(li);
   }
 }
@@ -1749,24 +1772,44 @@ function showUndo(msg, undo) {
   };
 }
 
-async function togglePaid(cb) {
-  if (!db || !cb.dataset.id) return;
-  const g = cb.dataset.id.startsWith("g:") ? itemRows().find(r => r.id === cb.dataset.id) : null;
-  try {
-    if (g) { for (const e of g.members) if (!!e.paid !== cb.checked) await db.collection("entries").doc(e.id).update({ paid: cb.checked }); }
-    else await db.collection("entries").doc(cb.dataset.id).update({ paid: cb.checked });
-  } catch (err) { cb.checked = !cb.checked; handleWriteError(err); }
+// Paid on/off for some sales. Marking paid never marks cash; marking unpaid also clears the cash
+// mark, because money that wasn't paid can't be cash in the drawer.
+async function setPaid(list, paid) {
+  for (const e of list) {
+    if (!!e.paid === paid && (paid || !e.cash)) continue;
+    await db.collection("entries").doc(e.id).update(paid ? { paid: true } : { paid: false, cash: false });
+  }
 }
 
-// Cash mark only; it never changes the Paid tick, and the Paid tick never changes it.
+// Cash on/off for some sales; only paid sales can be cash.
+async function setCash(list, cash) {
+  for (const e of list) if (e.paid && !!e.cash !== cash) await db.collection("entries").doc(e.id).update({ cash });
+}
+
+async function togglePaid(cb) {
+  if (!db || !cb.dataset.id) return;
+  const row = itemRows().find(r => r.id === cb.dataset.id);
+  if (!row) return;
+  try { await setPaid(row.group ? row.members : [row], cb.checked); }
+  catch (err) { cb.checked = !cb.checked; handleWriteError(err); }
+}
+
 async function toggleCash(btn) {
   if (!db || !btn.dataset.id) return;
   const row = itemRows().find(r => r.id === btn.dataset.id);
-  if (!row) return;
-  const target = !row.cash;
-  try {
-    for (const e of row.group ? row.members : [row]) if (!!e.cash !== target) await db.collection("entries").doc(e.id).update({ cash: target });
-  } catch (err) { handleWriteError(err); }
+  if (!row || !row.paid) return;
+  try { await setCash(row.group ? row.members : [row], !row.cash); }
+  catch (err) { handleWriteError(err); }
+}
+
+function cashButton(on, label, onClick) {
+  const b = mk("button", "cashb" + (on ? " on" : ""));
+  b.type = "button";
+  b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="6.5" width="19" height="11" rx="2"/><circle cx="12" cy="12" r="2.6"/></svg>';
+  b.setAttribute("aria-label", label);
+  b.setAttribute("aria-pressed", on ? "true" : "false");
+  b.onclick = onClick;
+  return b;
 }
 
 function handleWriteError(err) {
