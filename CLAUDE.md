@@ -30,7 +30,9 @@ composite indexes are needed.
   SHA-256 of "padel-nation:" + PIN). Asks for the PIN when one is set.
 - Past days are read-only (lock bar); unlocking needs the owner PIN (or the owner login if no PIN yet).
 - Staff logins see dismissible tips; the owner's login never does.
-- `sw.js` keeps the app openable offline (own files network-first, Firebase SDK cache-first). The top-bar
+- `sw.js` keeps the app openable offline (own files network-first with `cache: "no-cache"` because GitHub
+  Pages sends max-age=600, Firebase SDK cache-first). Bump `CACHE` when changing sw.js; the page reloads
+  itself once when a new worker takes over. Settings has a "Reload app" button. The top-bar
   "Saved" pill counts unsettled writes in firebase.js.
 
 ## The owner's preferences (keep these)
