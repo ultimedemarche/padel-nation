@@ -786,10 +786,14 @@ function productNames() {
   return list;
 }
 
+// What the Items tab and every total count: walk-in sales, plus Court-tab sales once that player
+// is ticked Paid. Unpaid Court-tab shares stay on the booking card as "Owed" until they're paid.
+const counted = () => entries.filter(e => !e.booking || e.paid);
+
 function totals() {
   const by = {};
   let paid = 0, unpaid = 0;
-  for (const e of entries) {
+  for (const e of counted()) {
     const t = by[e.product] || (by[e.product] = { total: 0, paid: 0, unpaid: 0, count: 0 });
     t.total += e.amount; t.count++;
     if (e.paid) { t.paid += e.amount; paid += e.amount; } else { t.unpaid += e.amount; unpaid += e.amount; }
@@ -803,7 +807,7 @@ const SHARED = ["Court", "Balls"];
 function itemRows() {
   const out = [];
   const groups = new Map();
-  for (const e of entries) {
+  for (const e of counted()) {
     if (!e.booking || !SHARED.includes(e.product)) { out.push(e); continue; }
     const k = e.booking + "|" + e.product;
     let g = groups.get(k);
