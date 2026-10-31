@@ -1377,8 +1377,8 @@ function reportText() {
     repRow("TOTAL", t.final),
     "```",
     "",
-    ...creditLines(),
-    "💵 *I have Cash: " + (cash == null ? "…" : kd(cash)) + " KD*"
+    "💵 *I have Cash: " + (cash == null ? "…" : kd(cash)) + " KD*",
+    ...creditLines()
   ].join("\n");
 }
 
@@ -2350,7 +2350,8 @@ function watchCredit() {
   });
 }
 
-// Lines for the WhatsApp report, only on a day credit was given or paid back.
+// Lines for the WhatsApp report, below the cash line, only on a day credit was given or paid back:
+// "• Mohsin Sir - 10.000 KD" for credit given, "• Mohsin Sir - paid 5.000 KD (still owes …)" for a payment.
 function creditLines() {
   const today = credits.filter(r => r.date === day);
   if (!today.length) return [];
@@ -2358,10 +2359,10 @@ function creditLines() {
   for (const id of [...new Set(today.map(r => r.customer))]) {
     const sum = kind => r3(today.filter(r => r.customer === id && r.kind === kind).reduce((s, r) => s + r.amount, 0));
     const took = sum("took"), paid = sum("paid"), left = balanceOf(id, day);
-    if (took) lines.push("• " + crName(id) + " took " + kd(took) + " KD on credit");
-    if (paid) lines.push("• " + crName(id) + " paid " + kd(paid) + " KD" + (left > 0 ? " (still owes " + kd(left) + " KD)" : " (all paid ✅)"));
+    if (took) lines.push("• " + crName(id) + " - " + kd(took) + " KD");
+    if (paid) lines.push("• " + crName(id) + " - paid " + kd(paid) + " KD" + (left > 0 ? " (still owes " + kd(left) + " KD)" : " (all paid ✅)"));
   }
-  return [...lines, ""];
+  return ["", ...lines];
 }
 
 function renderCredit() {
