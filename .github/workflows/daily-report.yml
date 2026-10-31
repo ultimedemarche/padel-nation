@@ -1,0 +1,38 @@
+name: Daily Telegram report
+
+on:
+  schedule:
+    # 21:03 UTC = 00:03 in Kuwait. GitHub can start scheduled jobs a few minutes late.
+    - cron: "3 21 * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "send = post the report · find-chat-id = list chats that messaged the bot"
+        type: choice
+        options: [send, find-chat-id]
+        default: send
+      date:
+        description: "Day to report, like 2026-10-31 (leave empty for the day that just ended)"
+        required: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Firebase tools
+        working-directory: report
+        run: npm install --no-audit --no-fund --no-save firebase-admin@12.1.0
+      - name: Send report
+        working-directory: report
+        run: node telegram-report.js
+        env:
+          MODE: ${{ inputs.mode || 'send' }}
+          REPORT_DATE: ${{ inputs.date }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
