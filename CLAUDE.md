@@ -26,7 +26,10 @@ composite indexes are needed.
 ## The owner's preferences (keep these)
 - Currency KD with 3 decimals. New sales start unticked; Paid and Cash marks are independent.
 - Items tab: don't change it when asked for Court-tab changes.
-- Booking Court/Balls shares show combined (one full amount) in the Items table.
+- Court-tab sales reach the Items table and every total (score strip, footer rows, report) only once that
+  player is ticked Paid (`counted()`); unpaid shares stay as "Owed" on the booking card.
+- Booking Court/Balls paid shares show combined in one Items cell (2 of 4 paid → 2 shares' worth).
+- Cash marks only appear/count on paid sales; unticking Paid clears cash.
 - Dark aurora + liquid-glass look, Sora font on buttons, morphing hover.
 - WhatsApp report must match their own message format exactly (see `reportText()`).
 - Every delete asks first and offers Undo.
