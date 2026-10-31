@@ -206,8 +206,6 @@ header.top .bar { background: radial-gradient(120% 160% at 0% 0%, rgba(240, 122,
 .cellx::after, .bx::after, .bdel::after { transform: translate(-50%, -50%) rotate(-45deg); }
 .bdel::before, .bdel::after { width: 12px; }
 
-/* Banner shown only in the demo (?demo). */
-.demo-banner { position: relative; z-index: 6; margin: 10px auto 0; width: fit-content; max-width: calc(100% - 32px); padding: 8px 16px; border-radius: 999px; text-align: center; font-size: .85rem; color: #10170a; background: linear-gradient(135deg, var(--lime), var(--racket)); box-shadow: 0 6px 18px rgba(181, 211, 52, .3); }
 
 /* ---- Video background ----
    bg.mp4 is the padel clip with the blur and darkening already built in, so the iPad only plays it.
@@ -222,7 +220,7 @@ header.top .bar { background: radial-gradient(120% 160% at 0% 0%, rgba(240, 122,
     linear-gradient(180deg, rgba(3, 6, 11, .45) 0%, rgba(3, 6, 11, .25) 40%, rgba(3, 6, 11, .62) 100%);
 }
 
-/* ---- Customer credit (section at the bottom of the page, demo only for now) ---- */
+/* ---- Customer credit (section at the bottom of the page) ---- */
 .credit-sec { margin-top: 28px; }
 .cr-unpaid { margin-top: 14px; border-radius: 22px; padding: 14px; display: grid; gap: 10px; }
 .cr-unpaid-head { font-family: var(--font-btn); font-weight: 700; color: var(--orange-soft); }
