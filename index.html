@@ -1370,7 +1370,13 @@ function reportText() {
   const cash = drawerNow();
   const rows = productNames().map(n => repRow(REPORT_NAMES[n] || n, (t.by[n] || {}).total || 0));
   const cp = creditPaid();
-  if (cp) rows.push(repRow("Credit paid", cp));
+  // One row per customer who paid credit back today, under their name (cut short to keep the column straight).
+  for (const id of [...new Set(credits.filter(r => r.kind === "paid" && r.date === day).map(r => r.customer))]) {
+    const paid = credits.filter(r => r.kind === "paid" && r.date === day && r.customer === id).reduce((s, r) => s + r.amount, 0);
+    const room = COL - kd(paid).length - 1;
+    const name = crName(id);
+    rows.push(repRow(name.length > room ? name.slice(0, room - 1) + "…" : name, paid));
+  }
   return [
     "📅 _" + longDate(day) + "_",
     "",
