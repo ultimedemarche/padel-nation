@@ -29,16 +29,7 @@ window.claude = {
     : Promise.resolve(null)
 };
 </script>
-<script>
-// ?demo opens a practice copy with sample data that is never saved; otherwise connect to Firebase.
-(() => {
-  const demo = new URLSearchParams(location.search).has("demo");
-  const s = document.createElement("script");
-  s.type = "module";
-  s.src = demo ? "demo.js" : "firebase.js";
-  document.head.append(s);
-})();
-</script>
+<script type="module" src="firebase.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&display=swap">
@@ -499,7 +490,6 @@ table.btable { border-collapse: collapse; width: 100%; font-size: 14px; }
 .login-card input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 .login-card .mbtn { margin-top: 10px; min-height: 50px; border-radius: 999px; font-size: 1rem; color: #04120c; background: linear-gradient(120deg, var(--aur-green), var(--aur-teal)); border-color: transparent; }
 .login-err { margin: 0; min-height: 1.2em; text-align: center; color: var(--warn); font-size: .88rem; }
-.demo-banner { position: relative; z-index: 6; margin: 10px auto 0; width: fit-content; max-width: calc(100% - 32px); padding: 8px 16px; border-radius: 999px; text-align: center; font-size: .85rem; color: #2b1a00; background: linear-gradient(135deg, #ffd34d, #ffae2b); box-shadow: 0 6px 18px rgba(255,174,43,.35); }
 .signfoot { position: relative; z-index: 1; display: flex; justify-content: center; align-items: center; gap: 10px; padding: 0 16px 28px; color: var(--muted); font-size: .8rem; }
 .signfoot[hidden] { display: none; }
 
