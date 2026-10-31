@@ -206,6 +206,6 @@ header.top .bar { background: radial-gradient(120% 160% at 0% 0%, rgba(240, 122,
 .bgvid::after {
   content: ""; position: absolute; inset: 0;
   background:
-    radial-gradient(ellipse 85% 75% at 50% 45%, rgba(3, 6, 11, 0), rgba(3, 6, 11, .6)),
-    linear-gradient(180deg, rgba(3, 6, 11, .35) 0%, rgba(3, 6, 11, .1) 40%, rgba(3, 6, 11, .5) 100%);
+    radial-gradient(ellipse 85% 75% at 50% 45%, rgba(3, 6, 11, .2), rgba(3, 6, 11, .72)),
+    linear-gradient(180deg, rgba(3, 6, 11, .45) 0%, rgba(3, 6, 11, .25) 40%, rgba(3, 6, 11, .62) 100%);
 }
