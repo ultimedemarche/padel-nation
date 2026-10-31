@@ -265,3 +265,10 @@ header.top .bar { background: radial-gradient(120% 160% at 0% 0%, rgba(240, 122,
 #crPop .confirm-card, #payForm { grid-template-columns: minmax(0, 1fr); }
 #crPop .set-sec { text-align: left; margin-top: 4px; }
 #crPop .pick-other input, #payForm .pick-other input { width: 100%; }
+/* Credit locked behind the owner PIN. */
+.cr-locked { margin-top: 14px; border-radius: 22px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+.cr-lock-ico { font-size: 1.3rem; }
+.cr-lock-text { margin-right: auto; font-family: var(--font-btn); font-weight: 600; color: var(--muted); }
+.cr-locked .mbtn { min-height: 42px; padding: 0 18px; border-radius: 14px; }
+#crLock { min-height: 40px; padding: 0 14px; border-radius: 14px; }
+.cr-remove { color: var(--muted); }

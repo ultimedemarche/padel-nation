@@ -66,7 +66,8 @@ let t = Date.now() - 6 * 3600 * 1000;
 const at = () => (t += 7 * 60 * 1000);
 const put = (name, id, d) => col(name).set(id, d);
 
-put("config", "main", { business: "Court Daily Income", products: [
+// Owner PIN in the demo is 1234 (shown in the banner), so the PIN screens can be tried.
+put("config", "main", { business: "Court Daily Income", pinHash: "95c75c1e09fb1b886974faa604ceabd0b56c269396ed8203ec7a301239cbb379", products: [
   { name: "Court", prices: [15, 20, 26, 30, 36, 52], noQty: true },
   { name: "Water", prices: [0.25] }, { name: "Gatorade", prices: [0.75] },
   { name: "Racket", prices: [1] }, { name: "Balls", prices: [3, 3.5], perPrice: true }, { name: "Grip", prices: [1.5] }
@@ -95,9 +96,9 @@ put("credit", "cr1", { customer: "c1", kind: "took", date: yesterday, amount: 13
 // ---- Demo banner; no sign-in needed ----
 const banner = document.createElement("div");
 banner.className = "demo-banner";
-banner.innerHTML = "<b>Demo</b> · sample data, nothing is saved. Reload to start over.";
+banner.innerHTML = "<b>Demo</b> · sample data, nothing is saved. Owner PIN: <b>1234</b>. Reload to start over.";
 document.body.prepend(banner);
-// Act as the owner so every part of the app (Settings included) can be tried; there is no PIN in the demo.
+// Act as the owner so every part of the app (Settings included) can be tried.
 window.__user = { email: "crowly@padelnation.app" };
 window.__resolveDb(db);
 window.dispatchEvent(new CustomEvent("syncstate", { detail: { pending: 0, online: navigator.onLine } }));

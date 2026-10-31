@@ -786,18 +786,26 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
       <div class="court-head">
         <div class="court-intro">
           <h2 class="sec-title" id="crHead">Credit</h2>
-          <p class="sheet-hint">Customers who play now and pay later. Only the owner can add credit; anyone can record a payment.</p>
+          <p class="sheet-hint">Customers who play now and pay later. Opens with the owner PIN.</p>
         </div>
-        <div class="court-actions">
+        <div class="court-actions" id="crActs" hidden>
           <span class="court-total num" id="crOwed">0.000 KD</span>
+          <button class="mbtn keep" id="crLock" type="button">🔒 Lock</button>
           <button class="mbtn newb" id="crGive" type="button">+ Add credit</button>
         </div>
       </div>
+      <div class="cr-locked glass" id="crLocked">
+        <span class="cr-lock-ico" aria-hidden="true">🔒</span>
+        <span class="cr-lock-text">Credit is locked</span>
+        <button class="mbtn" id="crOpen" type="button">Open with PIN</button>
+      </div>
+      <div id="crBody" hidden>
       <div class="cr-unpaid glass" id="crUnpaid" hidden>
         <div class="cr-unpaid-head" id="crUnpaidHead">Not paid yet</div>
         <ul class="pick-list num" id="crUnpaidList"></ul>
       </div>
       <div class="cr-list" id="crList"></div>
+      </div>
     </section>
   </div>
 </main>
@@ -2314,6 +2322,10 @@ function cashButton(on, label, onClick) {
 // Only the owner (PIN) puts sales on credit or removes a record; anyone can record a payment.
 let customers = [], credits = [], creditLoaded = false;
 let crDraft = null, payFor = null;
+// The Credit section stays hidden until the owner PIN opens it; it locks again when the app goes to the background.
+let creditOpen = false;
+// Customers removed after paying everything stay saved (old reports still show their name) but are hidden.
+const shownCustomers = () => customers.filter(c => !c.hidden);
 
 const crName = id => (customers.find(c => c.id === id) || {}).name || "Customer";
 const creditName = e => { const r = credits.find(x => x.id === e.credit); return r ? crName(r.customer) : "a customer"; };
@@ -2360,6 +2372,9 @@ function renderCredit() {
   const on = CREDIT && !!db;
   $("creditView").hidden = !on;
   if (!on) return;
+  $("crLocked").hidden = creditOpen;
+  $("crBody").hidden = $("crActs").hidden = !creditOpen;
+  if (!creditOpen) return;
   const owing = customers.filter(c => balanceOf(c.id) > 0);
   const editable = canEditNow();
   countTo($("crOwed"), owing.reduce((s, c) => s + balanceOf(c.id), 0), n => "Owed " + kd(n) + " KD");
@@ -2384,11 +2399,11 @@ function renderCredit() {
   const box = $("crList");
   const open = new Set([...box.querySelectorAll("details[open]")].map(d => d.dataset.cid));
   box.textContent = "";
-  if (!customers.length) {
+  if (!shownCustomers().length) {
     box.append(mk("div", "empty glass", creditLoaded ? "No credit customers yet." : "Loading…"));
     return;
   }
-  const list = [...customers].sort((a, b) => (balanceOf(b.id) > 0) - (balanceOf(a.id) > 0) || a.name.localeCompare(b.name));
+  const list = shownCustomers().sort((a, b) => (balanceOf(b.id) > 0) - (balanceOf(a.id) > 0) || a.name.localeCompare(b.name));
   for (const c of list) {
     const owes = balanceOf(c.id);
     const card = mk("article", "crc glass" + (owes > 0 ? " owes" : ""));
@@ -2408,6 +2423,13 @@ function renderCredit() {
     rem.type = "button"; rem.hidden = owes <= 0;
     rem.onclick = () => copyReminder(c);
     acts.append(pay, more, rem);
+    // Once everything is paid back the customer can be taken off the list.
+    if (owes <= 0) {
+      const off = mk("button", "linkbtn cr-remove", "Remove customer");
+      off.type = "button"; off.disabled = !db;
+      off.onclick = () => removeCustomer(c);
+      acts.append(off);
+    }
 
     const recs = credits.filter(r => r.customer === c.id).sort((a, b) => b.date.localeCompare(a.date) || b.at - a.at);
     const hist = mk("details", "co-log crc-hist");
@@ -2461,13 +2483,13 @@ function creditCandidates() {
 // Add to credit: one unpaid sale (saleKey), or an amount typed by hand. Asks for the customer's name.
 async function openGive(customerId, saleKey) {
   if (!canEditNow()) return;
-  if (!(await ownerCheck("Add to credit", "Only the owner can give credit. Enter the owner PIN."))) return;
+  if (!creditOpen && !(await ownerCheck("Add to credit", "Only the owner can give credit. Enter the owner PIN."))) return;
   crDraft = { customer: customerId || null, sale: saleKey || null };
   $("crNew").value = $("crAmt").value = $("crNote").value = "";
   $("crErr").textContent = "";
   $("crPop").hidden = false;
   renderGive();
-  if (!customers.length) setTimeout(() => $("crNew").focus(), 50);
+  if (!shownCustomers().length) setTimeout(() => $("crNew").focus(), 50);
 }
 function closeGive() { crDraft = null; $("crPop").hidden = true; }
 
@@ -2482,7 +2504,7 @@ function renderGive() {
   $("crHand").hidden = !!sale;
   const whoBox = $("crWho");
   whoBox.textContent = "";
-  for (const c of customers) {
+  for (const c of shownCustomers()) {
     const on = crDraft.customer === c.id;
     const b = mk("button", on ? "on" : "", c.name);
     b.type = "button";
@@ -2490,8 +2512,8 @@ function renderGive() {
     b.onclick = () => { crDraft.customer = on ? null : c.id; $("crNew").value = ""; $("crErr").textContent = ""; renderGive(); };
     whoBox.append(b);
   }
-  whoBox.hidden = !customers.length;
-  $("crNew").placeholder = customers.length ? "Or type a new customer's name" : "Customer name";
+  whoBox.hidden = !shownCustomers().length;
+  $("crNew").placeholder = shownCustomers().length ? "Or type a new customer's name" : "Customer name";
   const amount = sale ? sale.amount : parseFloat($("crAmt").value.replace(",", ".")) || 0;
   $("crSave").textContent = amount > 0 ? "Add " + kd(amount) + " KD to credit" : "Add to credit";
 }
@@ -2507,7 +2529,9 @@ async function saveGive() {
   if (!canEditNow()) return;
   try {
     if (!cid) {
+      // A removed customer with the same name comes back onto the list.
       const same = customers.find(c => c.name.toLowerCase() === newName.toLowerCase());
+      if (same && same.hidden) await db.collection("customers").doc(same.id).update({ hidden: false });
       cid = same ? same.id : (await db.collection("customers").add({ name: newName, at: Date.now(), by: me() })).id;
     }
     let total;
@@ -2566,7 +2590,7 @@ async function removeCredit(r) {
     toast("Go to " + longDate(r.date) + " to remove this cash payment.");
     return;
   }
-  if (!(await ownerCheck("Change credit", "Only the owner can remove credit records. Enter the owner PIN."))) return;
+  if (!creditOpen && !(await ownerCheck("Change credit", "Only the owner can remove credit records. Enter the owner PIN."))) return;
   const sales = r.entries && r.entries.length;
   const ok = await askConfirm(r.kind === "paid" ? "Remove this payment?" : "Remove this credit?",
     crName(r.customer) + " · " + kd(r.amount) + " KD · " + longDate(r.date) + (sales ? ". Its sales go back to unpaid." : ""));
@@ -2580,6 +2604,28 @@ async function removeCredit(r) {
       await db.collection("credit").doc(r.id).set(saved);
       await setEntries({ paid: true, cash: false, credit: r.id });
     });
+  } catch (e) { handleWriteError(e); }
+}
+
+async function openCredit() {
+  if (!(await ownerCheck("Credit", "Enter the owner PIN to see the credit list."))) return;
+  creditOpen = true;
+  render();
+}
+function lockCredit() {
+  creditOpen = false;
+  if (crDraft) closeGive();
+  if (payFor) closePay();
+  render();
+}
+
+async function removeCustomer(c) {
+  if (balanceOf(c.id) > 0) return;
+  const ok = await askConfirm("Remove " + c.name + "?", "Everything is paid. Their name goes off the credit list; old reports stay as they were.");
+  if (!ok) return;
+  try {
+    await db.collection("customers").doc(c.id).update({ hidden: true });
+    showUndo(c.name + " removed", () => db.collection("customers").doc(c.id).update({ hidden: false }));
   } catch (e) { handleWriteError(e); }
 }
 
@@ -2754,6 +2800,9 @@ $("setAdd").onclick = () => { draft.push({ name: "", prices: [""], noQty: false,
 for (const b of document.querySelectorAll("[data-hint]")) b.onclick = () => { try { localStorage.setItem("hint-" + b.dataset.hint, "1"); } catch (_) {} renderHints(); };
 $("splitPop").onclick = ev => { if (ev.target === $("splitPop")) closeSplit(); };
 $("crGive").onclick = () => { popButton($("crGive")); openGive(null); };
+$("crOpen").onclick = () => { popButton($("crOpen")); openCredit(); };
+$("crLock").onclick = lockCredit;
+document.addEventListener("visibilitychange", () => { if (document.hidden && creditOpen) lockCredit(); });
 $("crCancel").onclick = closeGive;
 $("crSave").onclick = saveGive;
 $("crPop").onclick = ev => { if (ev.target === $("crPop")) closeGive(); };

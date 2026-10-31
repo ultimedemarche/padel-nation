@@ -41,6 +41,9 @@ real app (then set it to `true`). Credit section at the bottom of every tab (not
 Add to credit per sale (asks the customer name), "+ Add credit" for a typed amount (owner PIN for both),
 Payment (anyone, all or part, cash goes into Cash in drawer and `days/<date>.cashIn`), Copy reminder.
 The WhatsApp report gets a "📒 Credit" block only on days credit was given or paid back.
+The whole section is locked until the owner PIN opens it (`creditOpen`; locks again on Lock or when the app
+goes to the background). A fully paid customer can be removed: `customers/<id>.hidden = true` (records kept,
+so old reports still show the name; adding credit under the same name brings them back). Demo owner PIN: 1234.
 
 ## People, Settings, locking
 - Owner = `crowly@padelnation.app` (const OWNER in index.html, and in the Firestore rules). Other logins are
