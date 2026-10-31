@@ -83,6 +83,7 @@ header.top .bar {
 .mbtn:active:not(:disabled) { color: #fff; }
 .datenav input { background: rgba(255, 255, 255, .06); box-shadow: none; }
 
+.toitems { min-height: 44px; border-radius: 999px; padding: 0 18px; font-weight: 600; }
 .newb, .co-form .mbtn, .pc-custom .mbtn, .set-add {
   background: linear-gradient(135deg, var(--orange), var(--orange-deep)); border-color: transparent; color: #fff; font-weight: 700;
 }

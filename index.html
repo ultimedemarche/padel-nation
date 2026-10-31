@@ -702,6 +702,7 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
         </div>
         <div class="court-actions">
           <span class="court-total num" id="courtTotal">0.000 KD</span>
+          <button class="mbtn toitems" id="toItems" type="button">Items →</button>
           <button class="mbtn newb" id="newBooking">+ New booking</button>
         </div>
       </div>
@@ -2284,6 +2285,13 @@ for (const b of document.querySelectorAll(".tab")) {
   };
 }
 $("newBooking").onclick = () => { popButton($("newBooking")); newBooking(); };
+// Jump from a Court tab straight to the Items tab.
+$("toItems").onclick = () => {
+  tab = "items";
+  try { localStorage.setItem("tab", tab); } catch (_) {}
+  render();
+  document.querySelector(".tabrow").scrollIntoView({ block: "start", behavior: stillMotion ? "auto" : "smooth" });
+};
 $("pickDone").onclick = closePick;
 $("picker").onclick = ev => { if (ev.target === $("picker")) closePick(); };
 $("pickMinus").onclick = () => { popButton($("pickMinus")); pick.qty = Math.max(1, pick.qty - 1); renderPick(); };
