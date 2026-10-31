@@ -9,6 +9,11 @@ Static site on GitHub Pages; data in Firebase (Firestore + Email/Password login)
   `db.collection(...).where().orderBy().onSnapshot()` / `db.doc(path).set()` API it was written against.
   The app gets it through `window.claude.use("db")` (a shim in `<head>` of index.html).
 - `import.html` — one-time copy of data exported from the old Claude version (`migration/`, git-ignored).
+- `theme.css` — the look (loaded after index.html's own styles): logo navy/lime/racket green + orange,
+  matte working cards, frosted glass on floating parts (header, tabs, pills, lock bar, popups),
+  Plus Jakarta Sans. The old aurora layer in index.html is hidden by it.
+- `bg.mp4` / `bg.jpg` — background padel clip, pre-blurred and darkened with ffmpeg (540x960, no audio);
+  extra darkness comes from `.bgvid::after` in theme.css. sw.js leaves video requests alone.
 - `manifest.webmanifest`, `icon-*.png`, `logo.png` — Home Screen app icon.
 
 ## Data (Firestore collections)

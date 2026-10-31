@@ -1,7 +1,8 @@
-/* Padel Nation look (design preview).
+/* Padel Nation look.
    Colours from the logo: shield navy, tennis-ball lime, racket green, plus orange as the main accent.
-   Surfaces are matte: flat dark navy with a fine grain, soft shadows, no glossy highlights.
-   Loaded after the app's own styles, so everything here wins. */
+   Working areas are matte (flat dark navy with a fine grain); floating parts are frosted glass;
+   the background is a blurred, darkened padel video (bg.mp4).
+   Loaded after the app's own styles in index.html, so everything here wins. */
 
 :root {
   color-scheme: dark;
@@ -190,12 +191,6 @@ header.top .bar { background: radial-gradient(120% 160% at 0% 0%, rgba(240, 122,
 .confirm-card.glass, .set-card.glass, .login-card { background: linear-gradient(160deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .05) 50%, rgba(255, 255, 255, .08)), rgba(10, 17, 28, .72); }
 /* The orange active tab sits inside the glass bar like a solid button. */
 .tab.on { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 8px 20px rgba(240, 122, 44, .35); }
-
-/* Preview banner. */
-.demo-banner { position: relative; z-index: 6; margin: 10px auto 0; width: fit-content; max-width: calc(100% - 32px); padding: 8px 16px; border-radius: 999px; text-align: center; font-size: .85rem; color: #10170a; background: linear-gradient(135deg, var(--lime), var(--racket)); box-shadow: 0 6px 18px rgba(181, 211, 52, .3); }
-
-/* ---- Moving court background (court.js, the other option) ---- */
-#court { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
 
 /* ---- Video background ----
    bg.mp4 is the padel clip with the blur and darkening already built in, so the iPad only plays it.

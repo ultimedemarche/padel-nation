@@ -3,11 +3,11 @@
 // the saved copy when offline. Firebase's code files never change for a version, so they're served from
 // the saved copy. Sales data is handled separately by Firestore's own offline storage.
 
-const CACHE = "padel-nation-v2";
+const CACHE = "padel-nation-v3";
 const SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
 const SHELL = [
-  "./", "./index.html", "./firebase.js", "./manifest.webmanifest",
-  "./logo.png", "./icon-180.png", "./icon-192.png", "./icon-512.png",
+  "./", "./index.html", "./firebase.js", "./theme.css", "./manifest.webmanifest",
+  "./logo.png", "./bg.jpg", "./icon-180.png", "./icon-192.png", "./icon-512.png",
   SDK + "firebase-app.js", SDK + "firebase-firestore.js", SDK + "firebase-auth.js"
 ];
 
@@ -26,6 +26,8 @@ self.addEventListener("fetch", event => {
   const req = event.request;
   if (req.method !== "GET") return;
   const url = new URL(req.url);
+  // The background video streams in pieces; leave it to the browser (offline, bg.jpg shows instead).
+  if (req.destination === "video" || url.pathname.endsWith(".mp4") || req.headers.has("range")) return;
 
   // Firebase SDK files: saved copy first.
   if (req.url.startsWith(SDK)) {
