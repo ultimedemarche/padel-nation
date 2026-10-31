@@ -423,11 +423,12 @@ table.btable { border-collapse: collapse; width: 100%; font-size: 14px; }
   position: absolute; z-index: 1; left: 4px; top: 50%; width: 26px; height: 26px; margin-top: -13px; padding: 0;
   border: 0; border-radius: 50%; background: rgba(255,255,255,.08); color: var(--muted);
   font-size: 1rem; line-height: 26px; text-align: center; touch-action: manipulation;
-  opacity: .35; transition: opacity .2s ease, background-color .2s, color .2s, transform .25s cubic-bezier(.34,1.56,.64,1);
+  /* Hidden in the table; on touch screens, removing is done from the cell's popup instead. */
+  opacity: 0; pointer-events: none; transform: scale(.7);
+  transition: opacity .2s ease, background-color .2s, color .2s, transform .25s cubic-bezier(.34,1.56,.64,1);
 }
 @media (hover: hover) {
-  .bx { opacity: 0; transform: scale(.7); }
-  .bcbox.has:hover .bx { opacity: .5; transform: scale(1); }
+  .bcbox.has:hover .bx { opacity: .5; pointer-events: auto; transform: scale(1); }
 }
 .bx:hover, .bx:active { opacity: 1; background: rgba(255, 80, 64, .45); color: #fff; }
 .bcell .plus { color: var(--muted); opacity: .35; font-size: 1.1rem; }
