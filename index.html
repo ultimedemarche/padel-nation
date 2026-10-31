@@ -925,7 +925,7 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
       <input id="payAmt" type="text" inputmode="decimal" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="Amount KD" aria-label="Amount paid in KD">
       <button class="mbtn" id="payFull" type="button">All</button>
     </div>
-    <label class="cr-cash"><input type="checkbox" id="payCash" checked> Paid in cash (goes into Cash in drawer)</label>
+    <label class="cr-cash"><input type="checkbox" id="payCash"> Paid in cash (goes into Cash in drawer)</label>
     <p class="pin-err" id="payErr" role="alert"></p>
     <div class="confirm-actions">
       <button class="mbtn keep" id="payCancel" type="button">Cancel</button>
@@ -2563,7 +2563,7 @@ function openPay(c) {
   if (!canEditNow()) return;
   payFor = c.id;
   $("payAmt").value = "";
-  $("payCash").checked = true;
+  $("payCash").checked = false;
   $("payErr").textContent = "";
   $("payPop").hidden = false;
   renderPay();
