@@ -1,0 +1,174 @@
+/* Padel Nation look (design preview).
+   Colours from the logo: shield navy, tennis-ball lime, racket green, plus orange as the main accent.
+   Surfaces are matte: flat dark navy with a fine grain, soft shadows, no glossy highlights.
+   Loaded after the app's own styles, so everything here wins. */
+
+:root {
+  color-scheme: dark;
+  --navy-950: #060a12;
+  --navy-900: #0a111c;
+  --navy-800: #111b2b;
+  --navy-700: #1a2a40;
+  --navy-600: #233a55;          /* logo shield */
+  --lime: #b5d334;              /* logo tennis ball */
+  --lime-soft: #e4f3a8;
+  --racket: #7bc043;            /* logo rackets */
+  --orange: #f07a2c;
+  --orange-deep: #d4561c;
+  --orange-soft: #ffd2b0;
+
+  --bg: var(--navy-950);
+  --ink: #f2f4f8;
+  --muted: rgba(214, 224, 240, .6);
+  --line: rgba(255, 255, 255, .06);
+  --edge: rgba(255, 255, 255, .08);
+  --edge-hi: rgba(255, 255, 255, .1);
+  --glass-strong: rgba(255, 255, 255, .06);
+  --glass-deep: rgba(10, 17, 28, .92);
+  --aur-green: var(--lime);
+  --aur-teal: var(--racket);
+  --aur-violet: var(--navy-600);
+  --aur-pink: var(--orange);
+  --accent: var(--lime);
+  --warn: #ff9b5c;
+  --tot-1: rgba(240, 122, 44, .62);
+  --tot-2: rgba(240, 122, 44, .42);
+  --tot-3: rgba(240, 122, 44, .28);
+  --font: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-display: var(--font);
+  --font-btn: var(--font);
+  /* Fine grain that makes flat surfaces read as matte. */
+  --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+html, body { background: var(--bg); }
+body::before { background: var(--navy-950); }
+.aurora { display: none; }
+
+/* ---- Matte surfaces ---- */
+.glass {
+  background: var(--grain), linear-gradient(160deg, rgba(26, 42, 64, .86), rgba(12, 20, 33, .9));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--edge);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .38);
+}
+
+/* Header: matte navy bar with an orange glow along the edge, like the reference. */
+header.top .bar {
+  background: var(--grain), radial-gradient(120% 140% at 0% 0%, rgba(240, 122, 44, .22), transparent 55%), linear-gradient(160deg, var(--navy-700), var(--navy-800));
+}
+.brand { font-weight: 800; letter-spacing: -.02em; }
+.brand small { color: var(--muted); }
+
+/* Totals strip: matte tiles, the first one in orange. */
+.score > div { border-radius: 22px; }
+.score .final {
+  background: var(--grain), linear-gradient(140deg, var(--orange) 0%, var(--orange-deep) 100%);
+  border-color: transparent;
+  box-shadow: 0 14px 30px rgba(240, 122, 44, .28);
+}
+.score .final .label, .score .final .cur { color: rgba(255, 244, 236, .85); }
+.score .val { font-weight: 800; }
+.score .unpaid .val { color: var(--warn); }
+
+/* ---- Buttons: dark matte pills; orange for the main ones ---- */
+.mbtn { background: var(--grain), rgba(255, 255, 255, .06); border-color: var(--edge); box-shadow: none; }
+.mbtn::after { display: none; }
+.mbtn::before { background: linear-gradient(120deg, var(--orange), var(--orange-deep)); }
+@media (hover: hover) {
+  .mbtn:hover:not(:disabled) { color: #fff; box-shadow: 0 10px 24px rgba(240, 122, 44, .3); border-color: transparent; }
+}
+.mbtn:active:not(:disabled) { color: #fff; }
+.datenav input { background: rgba(255, 255, 255, .06); box-shadow: none; }
+
+.newb, .co-form .mbtn, .pc-custom .mbtn, .set-add {
+  background: linear-gradient(135deg, var(--orange), var(--orange-deep)); border-color: transparent; color: #fff; font-weight: 700;
+}
+
+/* ---- Tabs: long pill bar, active tab solid orange (as in the reference) ---- */
+.tabs { background: var(--grain), rgba(10, 17, 28, .85); padding: 6px; border-radius: 999px; }
+.tab { border-radius: 999px; color: var(--muted); }
+.tab.on {
+  color: #fff; border-radius: 999px;
+  background: linear-gradient(135deg, var(--orange), var(--orange-deep));
+  box-shadow: 0 8px 20px rgba(240, 122, 44, .35);
+}
+.tab.on .tcount { background: rgba(255, 255, 255, .25); color: #fff; }
+.tcount { background: rgba(255, 255, 255, .1); }
+
+.wa { background: var(--grain), rgba(37, 211, 102, .16); border-color: rgba(37, 211, 102, .35); border-radius: 999px; }
+.clock { border-radius: 999px; }
+.clock .ch { background: none; color: #fff; -webkit-background-clip: initial; background-clip: initial; }
+.clock .cap { color: var(--orange); }
+.sync { border-radius: 999px; }
+.sync.ok .dot { background: var(--lime); box-shadow: 0 0 10px rgba(181, 211, 52, .6); }
+.sync.ok { color: var(--lime-soft); }
+
+/* ---- Price list ---- */
+.pcard { border-radius: 24px; }
+.pcard::before { background: radial-gradient(120% 90% at 100% 0%, rgba(240, 122, 44, .28), transparent 60%); }
+.pcard h3 { font-weight: 700; }
+.pchips .mbtn, .prow > .mbtn, .pick-prices .mbtn {
+  background: var(--grain), rgba(240, 122, 44, .14); border-color: rgba(240, 122, 44, .35); color: #fff;
+}
+.qty .qbtn { background: rgba(255, 255, 255, .07); }
+.qty.multi .qval, .pcard.multi .qval { color: var(--orange); }
+
+/* ---- Items sheet ---- */
+.sheet-wrap { border-radius: 24px; }
+.sheet thead th { background: linear-gradient(180deg, var(--navy-600), var(--navy-700)); color: #fff; }
+.sheet thead .rowno { background: var(--navy-700); }
+.sheet .rowno { background: var(--navy-900); }
+.sheet tbody tr:nth-child(even) td { background-color: rgba(255, 255, 255, .025); }
+.sheet tbody tr:nth-child(even) td.rowno { background-color: var(--navy-900); }
+.sheet input.amt:focus { outline-color: var(--orange); background: rgba(240, 122, 44, .12); }
+.sheet td.chk input { accent-color: var(--lime); }
+.sheet tr.final td.grand { color: #fff; }
+
+/* ---- Cash notes: lime when marked ---- */
+.cashb.on { color: #10170a; background: linear-gradient(135deg, var(--lime), var(--racket)); box-shadow: 0 0 12px rgba(181, 211, 52, .45); }
+
+/* ---- Court bookings ---- */
+.bcard { border-radius: 26px; }
+.bhead { background: var(--grain), radial-gradient(120% 160% at 0% 0%, rgba(240, 122, 44, .25), transparent 60%), linear-gradient(90deg, var(--navy-700), var(--navy-800)); }
+.btable thead th { background: linear-gradient(180deg, var(--navy-600), var(--navy-700)); color: #fff; }
+.btable tr.btotal > * { background: var(--navy-600); }
+.btable tr.btotal td.gold { background: linear-gradient(135deg, var(--orange), var(--orange-deep)); color: #fff; }
+.bcell .lines { color: var(--orange-soft); }
+
+/* Paid switches become status pills in spirit: lime = paid, orange = part, dark = unpaid. */
+.psw.on .knob { background: linear-gradient(120deg, var(--lime), var(--racket)); }
+.psw.part .knob { background: rgba(240, 122, 44, .75); }
+.psw.on .pswl { color: var(--lime-soft); }
+.psw.part .pswl { color: var(--orange-soft); }
+.ppaid.all, .pick-list .ptick.on { background: rgba(181, 211, 52, .22); border-color: rgba(181, 211, 52, .55); color: var(--lime-soft); }
+
+/* ---- Cash drawer ---- */
+.cashbox { background: var(--grain), radial-gradient(120% 140% at 0% 0%, rgba(181, 211, 52, .16), transparent 55%), linear-gradient(160deg, var(--navy-700), var(--navy-800)); border-color: var(--edge); }
+.cash-icon { background: linear-gradient(135deg, var(--lime), var(--racket)); box-shadow: 0 0 18px rgba(181, 211, 52, .4); }
+.cash-label { color: var(--lime-soft); }
+.cash-sum .cash-val { color: var(--lime); }
+.cash-val.out, .co-amt { color: var(--warn); }
+
+/* ---- Popups, lock bar, tips, login ---- */
+.confirm-card.glass, .toast.glass, .login-card, .set-card.glass {
+  background: var(--grain), linear-gradient(160deg, var(--navy-700), var(--navy-900));
+}
+.rep-text { background: #0d1a14; border-color: rgba(181, 211, 52, .25); }
+.rep-copy { background: linear-gradient(135deg, var(--orange), var(--orange-deep)); color: #fff; }
+.rep-copy.done { background: linear-gradient(135deg, var(--lime), var(--racket)); color: #10170a; }
+.wa-send { background: rgba(37, 211, 102, .14); }
+.split-n button.on { background: linear-gradient(135deg, var(--orange), var(--orange-deep)); color: #fff; }
+.lockbar { background: var(--grain), rgba(240, 122, 44, .12); border-color: rgba(240, 122, 44, .4); }
+.lockbar.open { background: var(--grain), rgba(181, 211, 52, .12); border-color: rgba(181, 211, 52, .45); }
+.hint { background: var(--grain), rgba(35, 58, 85, .7); border-color: rgba(255, 255, 255, .1); }
+.linkbtn { color: var(--orange); }
+.login-card .mbtn { background: linear-gradient(135deg, var(--orange), var(--orange-deep)); color: #fff; }
+.confirm-actions .danger { background: rgba(240, 70, 50, .35); }
+
+/* Preview banner. */
+.demo-banner { position: relative; z-index: 6; margin: 10px auto 0; width: fit-content; max-width: calc(100% - 32px); padding: 8px 16px; border-radius: 999px; text-align: center; font-size: .85rem; color: #10170a; background: linear-gradient(135deg, var(--lime), var(--racket)); box-shadow: 0 6px 18px rgba(181, 211, 52, .3); }
+
+/* ---- Moving court background ---- */
+#court { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
