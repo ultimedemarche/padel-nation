@@ -2371,7 +2371,8 @@ function creditLines() {
   for (const id of [...new Set(today.map(r => r.customer))]) {
     const sum = kind => r3(today.filter(r => r.customer === id && r.kind === kind).reduce((s, r) => s + r.amount, 0));
     const took = sum("took"), paid = sum("paid"), left = balanceOf(id, day);
-    if (took) lines.push("• " + crName(id) + " - " + kd(took) + " KD");
+    // On a day the customer pays, only the payment line is shown (its "still owes" covers anything taken that day).
+    if (took && !paid) lines.push("• " + crName(id) + " - " + kd(took) + " KD");
     if (paid) lines.push("• " + crName(id) + " - paid " + kd(paid) + " KD" + (left > 0 ? " (still owes " + kd(left) + " KD)" : " (all paid ✅)"));
   }
   return ["", ...lines];

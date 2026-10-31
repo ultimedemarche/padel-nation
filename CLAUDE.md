@@ -37,7 +37,7 @@ On in the real app since 2026-10-31 (`const CREDIT = true` in index.html). Credi
 Add to credit per sale (asks the customer name), "+ Add credit" for a typed amount (owner PIN for both),
 Payment (anyone, all or part, cash goes into Cash in drawer and `days/<date>.cashIn`), Copy reminder.
 The WhatsApp report gets credit lines (no heading) BELOW the cash line, only on days credit was given or paid back:
-"• Name - 10.000 KD" (credit given), "• Name - paid 5.000 KD (still owes …)" (payment).
+"• Name - 10.000 KD" (credit given), "• Name - paid 5.000 KD (still owes …)" (payment). On a day a customer pays, only their paid line shows.
 Money paid back that day (`creditPaid()`, cash or not) is a row under the customer's name in the report block and is added to
 the report TOTAL and the top Final total / Paid figures. The Items table itself stays sales-only.
 The whole section is locked until the owner PIN opens it (`creditOpen`; locks again on Lock or when the app
