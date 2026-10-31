@@ -32,13 +32,10 @@ composite indexes are needed.
 - Every delete asks first and offers Undo.
 - Test layout at phone and iPad widths before publishing (rules in the "Fitting every phone and tablet" CSS block).
 
-## Nightly Telegram report
-- `.github/workflows/daily-report.yml` runs at 21:03 UTC (00:03 Kuwait) and on demand (Actions → Run workflow;
-  `mode: find-chat-id` lists chats that messaged the bot; `date` resends a past day).
-- `report/telegram-report.js` reads that day from Firestore with firebase-admin and posts to Telegram (HTML).
-  `report/message.js` builds the styled text; test it locally with `migration/data.json`.
-- Secrets in GitHub: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, FIREBASE_SERVICE_ACCOUNT. Never commit them.
-- GitHub pauses scheduled workflows after 60 days with no commits to the repo; re-enable under Actions if so.
+## Daily report
+The "Daily report" button opens a preview of the WhatsApp-format message with "Copy message" and
+"Open WhatsApp". The company iPad can't install WhatsApp, so Copy is the main way to send it.
+(A nightly Telegram robot was built and then removed at the owner's request; don't bring it back unasked.)
 
 ## Publishing a change
 Edit, check locally, then `git add -A && git commit -m "..." && git push`. GitHub Pages updates in about a minute.
