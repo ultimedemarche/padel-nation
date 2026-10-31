@@ -810,6 +810,9 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
       <input id="pinNew" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8" placeholder="New PIN" aria-label="New PIN">
       <input id="pinNew2" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8" placeholder="Repeat PIN" aria-label="Repeat new PIN">
     </div>
+    <h3 class="set-sec">App</h3>
+    <p class="set-help">Loads the newest version of the app. Your sales and settings stay as they are.</p>
+    <button class="mbtn set-add" id="reloadApp" type="button">↻ Reload app</button>
     <p class="pin-err" id="setErr" role="alert"></p>
     <div class="confirm-actions">
       <button class="mbtn keep" id="setCancel" type="button">Cancel</button>
@@ -2282,6 +2285,15 @@ $("lockBtn").onclick = toggleLock;
 $("setClose").onclick = closeSettings;
 $("setCancel").onclick = closeSettings;
 $("setSave").onclick = saveSettings;
+// Fetches the newest app files (and the offline copy's latest version), then reloads.
+$("reloadApp").onclick = async () => {
+  $("reloadApp").textContent = "Reloading…";
+  try {
+    const regs = navigator.serviceWorker ? await navigator.serviceWorker.getRegistrations() : [];
+    await Promise.all(regs.map(r => r.update()));
+  } catch (_) {}
+  location.reload();
+};
 $("setAdd").onclick = () => { draft.push({ name: "", prices: "", noQty: false, perPrice: false }); renderSettings(); const inputs = $("setList").querySelectorAll(".set-row input[type=text]"); inputs[inputs.length - 2].focus(); };
 for (const b of document.querySelectorAll("[data-hint]")) b.onclick = () => { try { localStorage.setItem("hint-" + b.dataset.hint, "1"); } catch (_) {} renderHints(); };
 $("splitPop").onclick = ev => { if (ev.target === $("splitPop")) closeSplit(); };
