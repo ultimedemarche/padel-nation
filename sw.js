@@ -3,7 +3,7 @@
 // the saved copy when offline. Firebase's code files never change for a version, so they're served from
 // the saved copy. Sales data is handled separately by Firestore's own offline storage.
 
-const CACHE = "padel-nation-v1";
+const CACHE = "padel-nation-v2";
 const SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
 const SHELL = [
   "./", "./index.html", "./firebase.js", "./manifest.webmanifest",
@@ -38,8 +38,10 @@ self.addEventListener("fetch", event => {
   }
 
   // The app's own files: fresh when online, saved copy when offline.
+  // "no-cache" makes the browser ask GitHub every time (GitHub would otherwise allow a 10-minute-old copy);
+  // when nothing changed GitHub answers with a tiny "not modified", so it stays fast.
   if (url.origin === self.location.origin) {
-    event.respondWith(fetch(req).then(res => {
+    event.respondWith(fetch(req, { cache: "no-cache" }).then(res => {
       if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
       return res;
     }).catch(() => caches.match(req, { ignoreSearch: true }).then(hit => hit || caches.match("./index.html"))));
