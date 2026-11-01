@@ -44,10 +44,10 @@ The whole section is locked until the owner PIN opens it (`creditOpen`; locks ag
 goes to the background). A fully paid customer can be removed: `customers/<id>.hidden = true` (records kept,
 so old reports still show the name; adding credit under the same name brings them back).
 
-## Test links
-The `?demo` test link (demo.js, sample data) was removed at the owner's request on 2026-10-31. If a test
-copy is wanted again, it can be restored from git history (`git show f4cd320:demo.js`) along with the
-loader in index.html `<head>`.
+## Test link (demo)
+https://ultimedemarche.github.io/padel-nation/?demo loads `demo.js` instead of firebase.js: same database API,
+in memory, sample data (today + yesterday, one credit customer), no login, acts as the owner, owner PIN 1234,
+nothing saved (reload starts over). Brought back 2026-11-01 for testing while the owner uses the real app.
 
 ## People, Settings, locking
 - Owner = `crowly@padelnation.app` (const OWNER in index.html, and in the Firestore rules). Other logins are
