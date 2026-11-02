@@ -273,3 +273,25 @@ header.top .bar { background: radial-gradient(120% 160% at 0% 0%, rgba(240, 122,
 .cr-locked .mbtn { min-height: 42px; padding: 0 18px; border-radius: 14px; }
 #crLock { min-height: 40px; padding: 0 14px; border-radius: 14px; }
 .cr-remove { color: var(--muted); }
+
+/* No zooming (demo first): double-tap zoom off everywhere; pinch is stopped in index.html. */
+html.nozoom, html.nozoom body { touch-action: pan-x pan-y; }
+html.nozoom button, html.nozoom input, html.nozoom a, html.nozoom label, html.nozoom summary { touch-action: manipulation; }
+
+/* Activity log (Settings → Activity log, owner only). */
+.log-card { width: min(640px, 100%); grid-template-columns: minmax(0, 1fr); }
+.log-nav { display: flex; align-items: center; gap: 10px; }
+.log-nav .mbtn { min-height: 40px; min-width: 44px; border-radius: 14px; padding: 0 12px; font-size: 1.1rem; }
+.log-day { flex: 1; text-align: center; font-family: var(--font-btn); font-weight: 600; }
+.log-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.log-list li { display: grid; grid-template-columns: 44px 70px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 14px; background: rgba(255, 255, 255, .06); font-size: .88rem; }
+.log-list li.none { display: block; text-align: center; color: var(--muted); background: transparent; }
+.log-time { color: var(--muted); font-size: .8rem; }
+.log-tag { justify-self: start; padding: 2px 8px; border-radius: 999px; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; background: rgba(181, 211, 52, .2); color: var(--lime-soft); }
+.log-delete .log-tag { background: rgba(255, 90, 70, .22); color: #ffb3a6; }
+.log-edit .log-tag { background: rgba(240, 122, 44, .22); color: var(--orange-soft); }
+.log-undo .log-tag { background: rgba(255, 255, 255, .12); color: var(--ink); }
+.log-what { min-width: 0; overflow-wrap: anywhere; text-align: left; }
+.log-meta { display: block; color: var(--muted); font-size: .76rem; }
+.log-amt { font-weight: 700; white-space: nowrap; }
+@media (max-width: 480px) { .log-list li { grid-template-columns: 40px minmax(0, 1fr) auto; } .log-tag { grid-column: 2; grid-row: 1; } .log-what { grid-column: 2; } .log-time { grid-row: 1 / span 2; } .log-amt { grid-column: 3; grid-row: 1 / span 2; } }

@@ -49,6 +49,14 @@ https://ultimedemarche.github.io/padel-nation/?demo loads `demo.js` instead of f
 in memory, sample data (today + yesterday, one credit customer), no login, acts as the owner, owner PIN 1234,
 nothing saved (reload starts over). Brought back 2026-11-01 for testing while the owner uses the real app.
 
+## Being tried in the demo first (`TRYING` in index.html = ?demo)
+- `NOZOOM`: pinch and double-tap zoom blocked (viewport maximum-scale=1 + gesture events stopped + touch-action).
+- `LOGS`: hidden activity log. `logs` docs {date (real day), sheet (day changed), at, by, action add|edit|delete|undo,
+  text, amount?}. Written by `logAct()` on sales added/changed/deleted, bookings, cash outs, previous cash, credit,
+  and Undo. Seen only in Settings → Activity log (owner PIN); the app never deletes logs.
+To switch these on in the real app, set the flag to `true` (and consider Firestore rules making `logs`
+create-only, so nobody can delete them from outside the app).
+
 ## People, Settings, locking
 - Owner = `crowly@padelnation.app` (const OWNER in index.html, and in the Firestore rules). Other logins are
   staff, added in Firebase → Authentication → Users. Every new record stores `by` (login email).

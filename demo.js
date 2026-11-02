@@ -93,6 +93,13 @@ put("cashouts", "o1", { date: today, amount: 1, note: "Garbage bags", at: at() }
 put("customers", "c1", { name: "Abu Khalid", at: at() });
 put("credit", "cr1", { customer: "c1", kind: "took", date: yesterday, amount: 13, note: "Court", at: at() });
 
+// Activity log (Settings → Activity log): a few of today's actions, one of them a delete.
+const ago = m => Date.now() - m * 60 * 1000;
+[["add", "Court · Bo Fahad · Player 1", 6.5, 300, "staff@padelnation.app"], ["add", "Court (typed in the table)", 20, 240, "staff@padelnation.app"],
+ ["add", "Water (2 × 0.250)", 0.5, 200, "staff@padelnation.app"], ["delete", "Gatorade (was paid)", 0.75, 120, "staff@padelnation.app"],
+ ["add", "Cash out · Garbage bags", 1, 60, "crowly@padelnation.app"]].forEach(([action, text, amount, m, by], i) =>
+  put("logs", "l" + i, { date: today, sheet: today, at: ago(m), by, action, text, amount }));
+
 // ---- Demo banner; no sign-in needed ----
 const banner = document.createElement("div");
 banner.className = "demo-banner";

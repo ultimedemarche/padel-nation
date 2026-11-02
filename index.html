@@ -878,6 +878,11 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
       <input id="pinNew" type="password" inputmode="numeric" pattern="[0-9]*" autocorrect="off" autocomplete="new-password" maxlength="8" placeholder="New PIN" aria-label="New PIN">
       <input id="pinNew2" type="password" inputmode="numeric" pattern="[0-9]*" autocorrect="off" autocomplete="new-password" maxlength="8" placeholder="Repeat PIN" aria-label="Repeat new PIN">
     </div>
+    <div id="logSec" hidden>
+      <h3 class="set-sec">Activity log</h3>
+      <p class="set-help">Everything added, changed or deleted, with who did it and when. Only visible here.</p>
+      <button class="mbtn set-add" id="logOpen" type="button">📋 Open activity log</button>
+    </div>
     <h3 class="set-sec">App</h3>
     <p class="set-help">Loads the newest version of the app. Your sales and settings stay as they are.</p>
     <button class="mbtn set-add" id="reloadApp" type="button">↻ Reload app</button>
@@ -900,6 +905,21 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
     </button>
     <a class="mbtn wa-send" id="repSend" href="https://wa.me/" target="_blank" rel="noopener">Open WhatsApp</a>
     <button class="mbtn pick-done" id="repClose">Close</button>
+  </div>
+</div>
+
+<div class="confirm pop" id="logPop" hidden>
+  <div class="confirm-card pick glass log-card" role="dialog" aria-modal="true" aria-labelledby="logTitle">
+    <div class="set-head">
+      <h2 id="logTitle">Activity log</h2>
+      <button class="bdel" id="logClose" type="button" aria-label="Close activity log">×</button>
+    </div>
+    <div class="log-nav">
+      <button class="mbtn" id="logPrev" type="button" aria-label="Day before">‹</button>
+      <span class="log-day" id="logDay"></span>
+      <button class="mbtn" id="logNext" type="button" aria-label="Day after">›</button>
+    </div>
+    <ul class="log-list num" id="logList"></ul>
   </div>
 </div>
 
@@ -1000,6 +1020,14 @@ const who = email => email ? email.split("@")[0].replace(/^./, c => c.toUpperCas
 // Switched on for everyone (set to false to hide the Credit section again).
 const CREDIT = true;
 
+// ---- Being tried in the demo (?demo) first; set to true to switch on in the real app ----
+const TRYING = new URLSearchParams(location.search).has("demo");
+// No zooming: pinch and double-tap zoom are blocked, so the page stays put on the iPad.
+const NOZOOM = TRYING;
+// Hidden activity log: every sale added, changed or deleted (and cash outs, credit, undo) is written
+// to "logs" with who and when. Only the owner sees it (Settings → Activity log); the app never deletes it.
+const LOGS = TRYING;
+
 // ---- Past days are locked ----
 // Yesterday and earlier are read-only once the day is over; the owner PIN unlocks one day at a time.
 const todayIso = () => iso(new Date());
@@ -1090,6 +1118,7 @@ async function removeGroup(g, inp) {
   const saved = g.members.map(e => { const c = { ...e }; delete c.id; return [e.id, c]; });
   try {
     for (const e of g.members) await db.collection("entries").doc(e.id).delete();
+    logAct("delete", g.product + " · " + (b && b.name ? b.name : "Booking") + " (all players)", g.amount);
     showUndo(g.product + " " + kd(g.amount) + " KD removed", async () => {
       for (const [id, data] of saved) await db.collection("entries").doc(id).set(data);
     });
@@ -1324,7 +1353,7 @@ async function savePrevCash() {
   const v = parseFloat(raw);
   if (!(v >= 0)) { $("prevSub").textContent = "Type a number, like 25.000"; return; }
   if (!db || (prevCash == null && carry && r3(v) === carry.value)) { renderCashCounter(); return; }
-  try { await db.doc("drawer/" + day).set({ date: day, previous: r3(v), at: Date.now() }); }
+  try { await db.doc("drawer/" + day).set({ date: day, previous: r3(v), at: Date.now() }); logAct("edit", "Previous cash typed by hand", v); }
   catch (err) { handleWriteError(err); }
 }
 
@@ -1341,6 +1370,7 @@ async function addCashOut(ev) {
   const note = $("coNote").value.trim().slice(0, 80);
   try {
     await db.collection("cashouts").add({ date: day, amount: r3(v), note, at: Date.now(), by: me() });
+    logAct("add", "Cash out" + (note ? " · " + note : ""), v);
     $("coAmt").value = ""; $("coNote").value = "";
     $("coAmt").blur(); $("coNote").blur();
     renderCashCounter();
@@ -1353,6 +1383,7 @@ async function removeCashOut(o) {
   const saved = { ...o }; delete saved.id;
   try {
     await db.collection("cashouts").doc(o.id).delete();
+    logAct("delete", "Cash out · " + coLabel(o), o.amount);
     showUndo(coLabel(o) + " " + kd(o.amount) + " KD removed", () => db.collection("cashouts").doc(o.id).set(saved));
   } catch (err) { handleWriteError(err); }
 }
@@ -1599,6 +1630,7 @@ function numberBox(el) {
 let draft = null;
 async function openSettings() {
   if (!(await ownerCheck("Settings", "Enter the owner PIN to change items and prices."))) return;
+  $("logSec").hidden = !LOGS;
   draft = cfg.products.map(p => ({ name: p.name, prices: (p.prices || []).map(String), noQty: !!p.noQty, perPrice: !!p.perPrice }));
   $("pinNew").value = $("pinNew2").value = ""; $("setErr").textContent = "";
   $("pinState").textContent = cfg.pinHash ? "A PIN is set. Fill these in only to change it." : "No PIN yet. Set one so Settings and past-day corrections are protected.";
@@ -1890,6 +1922,7 @@ async function newBooking() {
   const n = bookings.filter(b => b.court === court).length + 1;
   try {
     const ref = await db.collection("bookings").add({ date: day, court, name: "Booking " + n, at: Date.now(), by: me() });
+    logAct("add", "New booking on Court " + court);
     if (ref && ref.id) { focusBid = ref.id; renderCourt(); }
   } catch (err) { handleWriteError(err); }
 }
@@ -1905,6 +1938,7 @@ async function deleteBooking(b) {
   try {
     for (const e of list) await db.collection("entries").doc(e.id).delete();
     await db.collection("bookings").doc(b.id).delete();
+    logAct("delete", "Booking " + (b.name || "") + ", Court " + b.court + (list.length ? " with " + list.length + " sales" : ""), total);
     showUndo((b.name || "Booking") + " deleted", async () => {
       await db.collection("bookings").doc(b.id).set(savedB);
       for (const [id, data] of saved) await db.collection("entries").doc(id).set(data);
@@ -1922,6 +1956,7 @@ async function removeCell(b, p, prod) {
   const saved = list.map(e => { const c = { ...e }; delete c.id; return [e.id, c]; });
   try {
     for (const e of list) await db.collection("entries").doc(e.id).delete();
+    logAct("delete", saleLabel(list[0]), total);
     showUndo(prod + " " + kd(total) + " KD removed", async () => {
       for (const [id, data] of saved) await db.collection("entries").doc(id).set(data);
     });
@@ -2196,8 +2231,63 @@ async function addAtNextRow(product, amount, qty = 1, unit = amount, extra = {})
     const same = entries.find(e => e.booking === extra.booking && e.product === product && Number.isInteger(e.row));
     if (same) row = same.row;
   }
-  try { await db.collection("entries").add({ date: day, product, row, amount: r3(amount), qty, unit: r3(unit), paid: false, at: Date.now(), by: me(), ...extra }); }
+  try {
+    await db.collection("entries").add({ date: day, product, row, amount: r3(amount), qty, unit: r3(unit), paid: false, at: Date.now(), by: me(), ...extra });
+    logAct("add", saleLabel({ product, ...extra }) + (qty > 1 ? " (" + qty + " × " + kd(unit) + ")" : ""), amount);
+  }
   catch (err) { handleWriteError(err); }
+}
+
+// ---- Activity log ----
+// action: "add" | "edit" | "delete" | "undo". date = the real day it happened; sheet = the day it changed
+// (different when someone corrects a past day).
+function logAct(action, text, amount) {
+  if (!LOGS || !db) return;
+  const rec = { date: todayIso(), sheet: day, at: Date.now(), by: me(), action, text };
+  if (typeof amount === "number") rec.amount = r3(amount);
+  db.collection("logs").add(rec).catch(() => {});
+}
+// "Water", or "Court · Bo Fahad · Player 2" for a booking share.
+function saleLabel(e) {
+  if (!e.booking) return e.product;
+  const b = bookings.find(x => x.id === e.booking);
+  return e.product + " · " + (b && b.name ? b.name : "Booking") + (Number.isInteger(e.player) ? " · Player " + (e.player + 1) : "");
+}
+
+let logDay = null, unsubLog = null, logRows = [];
+function openLog() {
+  closeSettings();
+  logDay = todayIso();
+  $("logPop").hidden = false;
+  watchLog();
+}
+function closeLog() { logDay = null; if (unsubLog) unsubLog(); unsubLog = null; $("logPop").hidden = true; }
+function watchLog() {
+  if (unsubLog) unsubLog();
+  logRows = null; renderLog();
+  unsubLog = db.collection("logs").where("date", "==", logDay).orderBy("at", "desc").onSnapshot(snap => {
+    logRows = snap.docs.map(d => d.data());
+    renderLog();
+  }, () => { logRows = []; renderLog(); });
+}
+const LOG_TAGS = { add: "Added", edit: "Changed", delete: "Deleted", undo: "Undo" };
+function renderLog() {
+  $("logDay").textContent = longDate(logDay) + (logDay === todayIso() ? " · Today" : "");
+  $("logNext").disabled = logDay >= todayIso();
+  const ul = $("logList");
+  ul.textContent = "";
+  if (!logRows) { ul.append(mk("li", "none", "Loading…")); return; }
+  if (!logRows.length) { ul.append(mk("li", "none", "Nothing was added or deleted on this day.")); return; }
+  for (const r of logRows) {
+    const li = mk("li", "log-" + r.action);
+    li.append(mk("span", "log-time", new Date(r.at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })));
+    li.append(mk("span", "log-tag", LOG_TAGS[r.action] || r.action));
+    const what = mk("span", "log-what", r.text);
+    const meta = [r.by ? who(r.by) : "", r.sheet && r.sheet !== r.date ? "for " + shortDate(r.sheet) : ""].filter(Boolean).join(" · ");
+    if (meta) what.append(mk("span", "log-meta", meta));
+    li.append(what, mk("span", "log-amt", typeof r.amount === "number" ? kd(r.amount) : ""));
+    ul.append(li);
+  }
 }
 
 function showNotice(msg) {
@@ -2224,9 +2314,13 @@ async function commitCell(inp) {
     inp.value = kd(v);
     if (existing && existing.credit && r3(existing.amount) !== r3(v)) { inp.value = kd(existing.amount); onCredit([existing]); return; }
     if (existing) {
-      if (r3(existing.amount) !== r3(v)) await db.collection("entries").doc(id).update({ amount: r3(v) });
+      if (r3(existing.amount) !== r3(v)) {
+        await db.collection("entries").doc(id).update({ amount: r3(v) });
+        logAct("edit", saleLabel(existing) + " changed from " + kd(existing.amount), v);
+      }
     } else {
       await db.collection("entries").add({ date: day, product, row, amount: r3(v), paid: false, at: Date.now(), by: me() });
+      logAct("add", product + " (typed in the table)", v);
     }
   } catch (err) { handleWriteError(err); }
 }
@@ -2239,6 +2333,7 @@ async function removeSale(existing, inp, skipAsk = false) {
   const saved = { ...existing }; delete saved.id;
   try {
     await db.collection("entries").doc(existing.id).delete();
+    logAct("delete", saleLabel(existing) + (existing.paid ? " (was paid)" : " (unpaid)"), existing.amount);
     showUndo(existing.product + " " + kd(existing.amount) + " KD removed", () => db.collection("entries").doc(existing.id).set(saved));
   } catch (err) { handleWriteError(err); }
 }
@@ -2277,7 +2372,7 @@ function showUndo(msg, undo) {
   $("undoBtn").onclick = async () => {
     clearTimeout(undoTimer);
     t.hidden = true;
-    try { await undo(); } catch (err) { handleWriteError(err); }
+    try { await undo(); logAct("undo", "Undo: " + msg); } catch (err) { handleWriteError(err); }
   };
 }
 
@@ -2564,6 +2659,7 @@ async function saveGive() {
     }
     const name = customers.find(c => c.id === cid) ? crName(cid) : newName;
     closeGive();
+    logAct("add", "Credit for " + name + (sale ? " · " + sale.label : ""), total);
     toast(kd(total) + " KD added to credit for " + name);
   } catch (e) { handleWriteError(e); }
 }
@@ -2599,6 +2695,7 @@ async function savePay(ev) {
     await db.collection("credit").add({ customer: id, kind: "paid", date: day, amount: v, cash, at: Date.now(), by: me() });
     closePay();
     const left = r3(owes - v);
+    logAct("add", "Credit paid back by " + crName(id) + (cash ? " (cash)" : ""), v);
     toast(crName(id) + " paid " + kd(v) + " KD" + (left > 0 ? " · still owes " + kd(left) : " · all paid"));
   } catch (e) { handleWriteError(e); }
 }
@@ -2619,6 +2716,7 @@ async function removeCredit(r) {
   try {
     await setEntries({ paid: false, cash: false, credit: null });
     await db.collection("credit").doc(r.id).delete();
+    logAct("delete", (r.kind === "paid" ? "Credit payment from " : "Credit for ") + crName(r.customer), r.amount);
     showUndo((r.kind === "paid" ? "Payment " : "Credit ") + kd(r.amount) + " KD removed", async () => {
       await db.collection("credit").doc(r.id).set(saved);
       await setEntries({ paid: true, cash: false, credit: r.id });
@@ -2644,6 +2742,7 @@ async function removeCustomer(c) {
   if (!ok) return;
   try {
     await db.collection("customers").doc(c.id).update({ hidden: true });
+    logAct("delete", "Credit customer " + c.name + " removed (all paid)");
     showUndo(c.name + " removed", () => db.collection("customers").doc(c.id).update({ hidden: false }));
   } catch (e) { handleWriteError(e); }
 }
@@ -2807,6 +2906,19 @@ $("setClose").onclick = closeSettings;
 $("setCancel").onclick = closeSettings;
 $("setSave").onclick = saveSettings;
 // Fetches the newest app files (and the offline copy's latest version), then reloads.
+$("logOpen").onclick = openLog;
+$("logClose").onclick = closeLog;
+$("logPop").onclick = ev => { if (ev.target === $("logPop")) closeLog(); };
+$("logPrev").onclick = () => { logDay = shift(logDay, -1); watchLog(); };
+$("logNext").onclick = () => { if (logDay < todayIso()) { logDay = shift(logDay, 1); watchLog(); } };
+if (NOZOOM) {
+  // iPad Safari ignores "no zoom" in the page settings for pinching, so the pinch gesture itself is stopped.
+  const vp = document.querySelector('meta[name="viewport"]');
+  vp.content = "width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover";
+  document.documentElement.classList.add("nozoom");
+  for (const g of ["gesturestart", "gesturechange", "gestureend"]) document.addEventListener(g, ev => ev.preventDefault(), { passive: false });
+  document.addEventListener("touchmove", ev => { if (ev.touches.length > 1) ev.preventDefault(); }, { passive: false });
+}
 $("reloadApp").onclick = async () => {
   $("reloadApp").textContent = "Reloading…";
   try {
