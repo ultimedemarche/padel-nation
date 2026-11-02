@@ -1751,30 +1751,32 @@ function placeTabBar() {
   bar.classList.toggle("low", low);
 }
 
-// Moves the sliding pill under the selected tab. No animation the first time or when the screen resizes.
-let pill = null;
-function movePill(animate = true) {
-  const nav = document.querySelector(".tabs");
-  if (!pill) {
-    pill = mk("span", "tab-pill");
-    pill.setAttribute("aria-hidden", "true");
-    nav.prepend(pill);
-    nav.classList.add("pills");
+// "Sliding pills": a group of buttons where the chosen one sits on one orange pill, and the pill slides
+// (with a small stretch) to the button you tap. Used by the tabs, Split court and the credit customer choice.
+// box = the group, on = the chosen button (or null: the pill fades out). No slide the first time.
+function slidePill(box, on, animate = true) {
+  let p = box.querySelector(":scope > .slide-pill");
+  if (!p) {
+    p = mk("span", "slide-pill");
+    p.setAttribute("aria-hidden", "true");
+    box.prepend(p);
+    box.classList.add("pills");
     animate = false;
   }
-  const on = nav.querySelector(".tab.on");
-  if (!on) return;
-  const x = on.offsetLeft, w = on.offsetWidth;
-  if (pill.__x === x && pill.__w === w) return;
-  pill.classList.toggle("still", !animate || stillMotion);
-  // A quick stretch while it travels, then it settles to the tab size.
-  if (animate && !stillMotion && pill.__x != null) {
-    pill.classList.remove("go"); void pill.offsetWidth; pill.classList.add("go");
-  }
-  pill.style.transform = "translateX(" + x + "px)";
-  pill.style.width = w + "px";
-  pill.__x = x; pill.__w = w;
+  if (!on || !on.offsetWidth) { p.classList.add("gone"); p.__x = null; return; }
+  const x = on.offsetLeft, y = on.offsetTop, w = on.offsetWidth, h = on.offsetHeight;
+  const appearing = p.classList.contains("gone") || p.__x == null;
+  p.classList.remove("gone");
+  if (p.__x === x && p.__y === y && p.__w === w && p.__h === h) return;
+  const slide = animate && !appearing && !stillMotion;
+  p.classList.toggle("still", !slide);
+  if (slide) { p.classList.remove("go"); void p.offsetWidth; p.classList.add("go"); }
+  p.style.transform = "translate(" + x + "px, " + y + "px)";
+  p.style.width = w + "px";
+  p.style.height = h + "px";
+  Object.assign(p, { __x: x, __y: y, __w: w, __h: h });
 }
+const movePill = (animate = true) => { const nav = document.querySelector(".tabs"); slidePill(nav, nav.querySelector(".tab.on"), animate); };
 
 function renderTabs() {
   placeTabBar();
@@ -2109,13 +2111,14 @@ function renderSplit() {
   if (!b) { closeSplit(); return; }
   $("splitSub").textContent = (b.name || "Booking") + " · Court " + b.court + " · split between";
   const nBox = $("splitN");
-  nBox.textContent = "";
+  for (const old of [...nBox.querySelectorAll("button")]) old.remove();
   for (let n = 2; n <= PLAYERS; n++) {
     const c = mk("button", n === split.n ? "on" : "", n + " players");
     c.setAttribute("aria-pressed", n === split.n ? "true" : "false");
     c.onclick = () => { split.n = n; renderSplit(); };
     nBox.append(c);
   }
+  if (PILLS) slidePill(nBox, nBox.querySelector("button.on"));
   const court = cfg.products.find(p => p.name === "Court");
   const prices = court && Array.isArray(court.prices) ? court.prices : [];
   const pr = $("splitPrices");
@@ -2661,7 +2664,7 @@ function renderGive() {
   if (sale) { $("crSale").textContent = ""; $("crSale").append(mk("span", "", sale.label), mk("b", "", kd(sale.amount) + " KD")); }
   $("crHand").hidden = !!sale;
   const whoBox = $("crWho");
-  whoBox.textContent = "";
+  for (const old of [...whoBox.querySelectorAll("button")]) old.remove();
   for (const c of shownCustomers()) {
     const on = crDraft.customer === c.id;
     const b = mk("button", on ? "on" : "", c.name);
@@ -2671,6 +2674,7 @@ function renderGive() {
     whoBox.append(b);
   }
   whoBox.hidden = !shownCustomers().length;
+  if (PILLS) slidePill(whoBox, whoBox.querySelector("button.on"));
   $("crNew").placeholder = shownCustomers().length ? "Or type a new customer's name" : "Customer name";
   const amount = sale ? sale.amount : parseFloat($("crAmt").value.replace(",", ".")) || 0;
   $("crSave").textContent = amount > 0 ? "Add " + kd(amount) + " KD to credit" : "Add to credit";
