@@ -1020,17 +1020,17 @@ const who = email => email ? email.split("@")[0].replace(/^./, c => c.toUpperCas
 // Switched on for everyone (set to false to hide the Credit section again).
 const CREDIT = true;
 
-// ---- Being tried in the demo (?demo) first; set to true to switch on in the real app ----
+// ---- New features: tried in the demo (?demo) first with "= TRYING", then set to true for the real app ----
 const TRYING = new URLSearchParams(location.search).has("demo");
 // No zooming: pinch and double-tap zoom are blocked, so the page stays put on the iPad.
-const NOZOOM = TRYING;
+const NOZOOM = true;
 // Hidden activity log: every sale added, changed or deleted (and cash outs, credit, undo) is written
 // to "logs" with who and when. Only the owner sees it (Settings → Activity log); the app never deletes it.
-const LOGS = TRYING;
+const LOGS = true;
 // On the Items tab the tab bar (tabs, Saved, Daily report, clock) sits just above the Items table.
-const TABS_LOW = TRYING;
+const TABS_LOW = true;
 // "Sliding pills": one orange pill under the tabs that slides over to the tab you tap.
-const PILLS = TRYING;
+const PILLS = true;
 
 // ---- Past days are locked ----
 // Yesterday and earlier are read-only once the day is over; the owner PIN unlocks one day at a time.

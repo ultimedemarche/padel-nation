@@ -49,7 +49,7 @@ https://ultimedemarche.github.io/padel-nation/?demo loads `demo.js` instead of f
 in memory, sample data (today + yesterday, one credit customer), no login, acts as the owner, owner PIN 1234,
 nothing saved (reload starts over). Brought back 2026-11-01 for testing while the owner uses the real app.
 
-## Being tried in the demo first (`TRYING` in index.html = ?demo)
+## New features (tried in the demo first with `= TRYING`, now on in the real app since 2026-11-02)
 - `NOZOOM`: pinch and double-tap zoom blocked (viewport maximum-scale=1 + gesture events stopped + touch-action).
 - `LOGS`: hidden activity log. `logs` docs {date (real day), sheet (day changed), at, by, action add|edit|delete|undo,
   text, amount?}. Written by `logAct()` on sales added/changed/deleted, bookings, cash outs, previous cash, credit,
@@ -58,7 +58,7 @@ nothing saved (reload starts over). Brought back 2026-11-01 for testing while th
   (`placeTabBar()` moves it; Court tabs keep it at the top).
 - `PILLS`: "sliding pills": the chosen button sits on one orange `.slide-pill` that slides (small stretch) to the
   next one. `slidePill(box, onButton)` is used by the tabs, Split court (2/3/4 players) and the credit customer choice.
-To switch these on in the real app, set the flag to `true` (and consider Firestore rules making `logs`
+New features go through the same path: `const X = TRYING` while testing in ?demo, `true` once approved. Consider Firestore rules making `logs`
 create-only, so nobody can delete them from outside the app).
 
 ## People, Settings, locking
