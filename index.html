@@ -1029,6 +1029,8 @@ const NOZOOM = TRYING;
 const LOGS = TRYING;
 // On the Items tab the tab bar (tabs, Saved, Daily report, clock) sits just above the Items table.
 const TABS_LOW = TRYING;
+// "Sliding pills": one orange pill under the tabs that slides over to the tab you tap.
+const PILLS = TRYING;
 
 // ---- Past days are locked ----
 // Yesterday and earlier are read-only once the day is over; the owner PIN unlocks one day at a time.
@@ -1749,6 +1751,31 @@ function placeTabBar() {
   bar.classList.toggle("low", low);
 }
 
+// Moves the sliding pill under the selected tab. No animation the first time or when the screen resizes.
+let pill = null;
+function movePill(animate = true) {
+  const nav = document.querySelector(".tabs");
+  if (!pill) {
+    pill = mk("span", "tab-pill");
+    pill.setAttribute("aria-hidden", "true");
+    nav.prepend(pill);
+    nav.classList.add("pills");
+    animate = false;
+  }
+  const on = nav.querySelector(".tab.on");
+  if (!on) return;
+  const x = on.offsetLeft, w = on.offsetWidth;
+  if (pill.__x === x && pill.__w === w) return;
+  pill.classList.toggle("still", !animate || stillMotion);
+  // A quick stretch while it travels, then it settles to the tab size.
+  if (animate && !stillMotion && pill.__x != null) {
+    pill.classList.remove("go"); void pill.offsetWidth; pill.classList.add("go");
+  }
+  pill.style.transform = "translateX(" + x + "px)";
+  pill.style.width = w + "px";
+  pill.__x = x; pill.__w = w;
+}
+
 function renderTabs() {
   placeTabBar();
   for (const b of document.querySelectorAll(".tab")) {
@@ -1762,6 +1789,8 @@ function renderTabs() {
     const c = bookings.filter(b => b.court === n).length;
     $("tabCount" + n).textContent = c ? c : "";
   }
+  // After the counts, since a count changes how wide its tab is.
+  if (PILLS) movePill();
 }
 
 function renderCourt() {
@@ -2921,6 +2950,9 @@ $("setClose").onclick = closeSettings;
 $("setCancel").onclick = closeSettings;
 $("setSave").onclick = saveSettings;
 // Fetches the newest app files (and the offline copy's latest version), then reloads.
+// Re-measure without sliding when a tab changes size (the font finishing loading, a count appearing, a resize).
+if (PILLS && window.ResizeObserver) { const ro = new ResizeObserver(() => movePill(false)); for (const b of document.querySelectorAll(".tab")) ro.observe(b); }
+else if (PILLS) window.addEventListener("resize", () => movePill(false));
 $("logOpen").onclick = openLog;
 $("logClose").onclick = closeLog;
 $("logPop").onclick = ev => { if (ev.target === $("logPop")) closeLog(); };

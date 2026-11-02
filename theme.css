@@ -298,3 +298,18 @@ html.nozoom button, html.nozoom input, html.nozoom a, html.nozoom label, html.no
 
 /* Tab bar moved above the Items table (demo first): a little room above and below it. */
 .tabrow.low { margin: 6px 0 2px; }
+
+/* ---- Sliding pills (demo first): one orange pill slides under the selected tab ---- */
+.tabs.pills { position: relative; isolation: isolate; }
+.tabs.pills .tab { position: relative; z-index: 1; transition: color .35s ease; }
+.tabs.pills .tab.on { background: transparent; box-shadow: none; }
+.tab-pill {
+  position: absolute; z-index: 0; top: 6px; bottom: 6px; left: 0; width: 0; border-radius: 999px; pointer-events: none;
+  background: linear-gradient(135deg, var(--orange), var(--orange-deep));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 8px 20px rgba(240, 122, 44, .35);
+  transition: transform .5s cubic-bezier(.34, 1.4, .64, 1), width .5s cubic-bezier(.34, 1.4, .64, 1);
+}
+.tab-pill.still { transition: none; }
+.tab-pill.go { animation: pillstretch .5s ease; }
+@keyframes pillstretch { 0% { scale: 1 1; } 35% { scale: 1.08 .86; } 70% { scale: .98 1.04; } 100% { scale: 1 1; } }
+@media (prefers-reduced-motion: reduce) { .tab-pill { transition: none; } .tab-pill.go { animation: none; } }
