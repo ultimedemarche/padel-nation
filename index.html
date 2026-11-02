@@ -1027,6 +1027,8 @@ const NOZOOM = TRYING;
 // Hidden activity log: every sale added, changed or deleted (and cash outs, credit, undo) is written
 // to "logs" with who and when. Only the owner sees it (Settings → Activity log); the app never deletes it.
 const LOGS = TRYING;
+// On the Items tab the tab bar (tabs, Saved, Daily report, clock) sits just above the Items table.
+const TABS_LOW = TRYING;
 
 // ---- Past days are locked ----
 // Yesterday and earlier are read-only once the day is over; the owner PIN unlocks one day at a time.
@@ -1735,7 +1737,20 @@ const courtOf = t => t === "court1" ? 1 : t === "court2" ? 2 : 0;
 const canEditNow = () => canWrite && loaded && !!db;
 function mk(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 
+// Where the tab bar normally lives (under the day totals), so it can go back there on the Court tabs.
+let tabHome = null;
+function placeTabBar() {
+  const bar = document.querySelector(".tabrow");
+  if (!tabHome) tabHome = bar.nextElementSibling;
+  const low = TABS_LOW && tab === "items";
+  const table = $("itemsTitle").closest("section");
+  if (low && bar.nextElementSibling !== table) table.before(bar);
+  if (!low && bar.nextElementSibling !== tabHome) tabHome.before(bar);
+  bar.classList.toggle("low", low);
+}
+
 function renderTabs() {
+  placeTabBar();
   for (const b of document.querySelectorAll(".tab")) {
     const on = b.dataset.tab === tab;
     b.classList.toggle("on", on);

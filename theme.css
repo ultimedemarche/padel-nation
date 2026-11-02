@@ -295,3 +295,6 @@ html.nozoom button, html.nozoom input, html.nozoom a, html.nozoom label, html.no
 .log-meta { display: block; color: var(--muted); font-size: .76rem; }
 .log-amt { font-weight: 700; white-space: nowrap; }
 @media (max-width: 480px) { .log-list li { grid-template-columns: 40px minmax(0, 1fr) auto; } .log-tag { grid-column: 2; grid-row: 1; } .log-what { grid-column: 2; } .log-time { grid-row: 1 / span 2; } .log-amt { grid-column: 3; grid-row: 1 / span 2; } }
+
+/* Tab bar moved above the Items table (demo first): a little room above and below it. */
+.tabrow.low { margin: 6px 0 2px; }

@@ -54,6 +54,8 @@ nothing saved (reload starts over). Brought back 2026-11-01 for testing while th
 - `LOGS`: hidden activity log. `logs` docs {date (real day), sheet (day changed), at, by, action add|edit|delete|undo,
   text, amount?}. Written by `logAct()` on sales added/changed/deleted, bookings, cash outs, previous cash, credit,
   and Undo. Seen only in Settings → Activity log (owner PIN); the app never deletes logs.
+- `TABS_LOW`: on the Items tab the tab bar (tabs, Saved, Daily report, clock) sits just above the Items table
+  (`placeTabBar()` moves it; Court tabs keep it at the top).
 To switch these on in the real app, set the flag to `true` (and consider Firestore rules making `logs`
 create-only, so nobody can delete them from outside the app).
 
