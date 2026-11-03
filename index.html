@@ -961,7 +961,7 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
         <button type="button" data-how="cash" aria-pressed="false">💵 Cash</button>
         <button type="button" data-how="link" aria-pressed="false">🔗 Payment link</button>
       </div>
-      <p class="set-help" id="payHowHelp">Cash goes into Cash in drawer. A payment link doesn't.</p>
+      <p class="set-help" id="payHowHelp">Cash goes into Cash in drawer and the day's total. A payment link goes straight to the company account: it only lowers what they owe.</p>
     </div>
     <p class="pin-err" id="payErr" role="alert"></p>
     <div class="confirm-actions">
@@ -1426,8 +1426,8 @@ function reportText() {
   const rows = productNames().map(n => repRow(REPORT_NAMES[n] || n, (t.by[n] || {}).total || 0));
   const cp = creditPaid();
   // One row per customer who paid credit back today, under their name (cut short to keep the column straight).
-  for (const id of [...new Set(credits.filter(r => r.kind === "paid" && r.date === day).map(r => r.customer))]) {
-    const paid = credits.filter(r => r.kind === "paid" && r.date === day && r.customer === id).reduce((s, r) => s + r.amount, 0);
+  for (const id of [...new Set(credits.filter(r => r.kind === "paid" && r.date === day && !viaLink(r)).map(r => r.customer))]) {
+    const paid = credits.filter(r => r.kind === "paid" && r.date === day && r.customer === id && !viaLink(r)).reduce((s, r) => s + r.amount, 0);
     const room = COL - kd(paid).length - 1;
     const name = crName(id);
     rows.push(repRow(name.length > room ? name.slice(0, room - 1) + "…" : name, paid));
@@ -2497,7 +2497,10 @@ const creditName = e => { const r = credits.find(x => x.id === e.credit); return
 const balanceOf = (id, upTo) => r3(credits.filter(r => r.customer === id && (!upTo || r.date <= upTo))
   .reduce((s, r) => s + (r.kind === "paid" ? -r.amount : r.amount), 0));
 // Everything customers paid back on the day shown (cash or not).
-const creditPaid = () => r3(credits.filter(r => r.kind === "paid" && r.date === day).reduce((s, r) => s + r.amount, 0));
+// Paid back through the app (cash or not). A payment link goes straight to the company account, so it only
+// lowers what the customer owes: it is not part of the day's total, the report TOTAL or the drawer.
+const viaLink = r => r.method === "link";
+const creditPaid = () => r3(credits.filter(r => r.kind === "paid" && r.date === day && !viaLink(r)).reduce((s, r) => s + r.amount, 0));
 const creditCash = () => credits.filter(r => r.kind === "paid" && r.cash && r.date === day).reduce((s, r) => s + r.amount, 0);
 const shortDate = s => parseIso(s).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 
@@ -2533,9 +2536,13 @@ function creditLines() {
   for (const id of [...new Set(today.map(r => r.customer))]) {
     const sum = kind => r3(today.filter(r => r.customer === id && r.kind === kind).reduce((s, r) => s + r.amount, 0));
     const took = sum("took"), paid = sum("paid"), left = balanceOf(id, day);
-    // On a day the customer pays, only the payment line is shown (its "still owes" covers anything taken that day).
+    const byLink = r3(today.filter(r => r.customer === id && r.kind === "paid" && viaLink(r)).reduce((s, r) => s + r.amount, 0));
+    const here = r3(paid - byLink);
+    const owes = left > 0 ? " (still owes " + kd(left) + " KD)" : " (all paid ✅)";
+    // On a day the customer pays, only the payment line(s) are shown (their "still owes" covers anything taken that day).
     if (took && !paid) lines.push("• " + crName(id) + " - " + kd(took) + " KD");
-    if (paid) lines.push("• " + crName(id) + " - paid " + kd(paid) + " KD" + (left > 0 ? " (still owes " + kd(left) + " KD)" : " (all paid ✅)"));
+    if (here) lines.push("• " + crName(id) + " - paid " + kd(here) + " KD" + (byLink ? "" : owes));
+    if (byLink) lines.push("• " + crName(id) + " - paid " + kd(byLink) + " KD by link" + owes);
   }
   return ["", ...lines];
 }
