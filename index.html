@@ -954,7 +954,15 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
       <input id="payAmt" type="text" inputmode="decimal" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="Amount KD" aria-label="Amount paid in KD">
       <button class="mbtn" id="payFull" type="button">All</button>
     </div>
-    <label class="cr-cash"><input type="checkbox" id="payCash"> Paid in cash (goes into Cash in drawer)</label>
+    <label class="cr-cash" id="payCashRow"><input type="checkbox" id="payCash"> Paid in cash (goes into Cash in drawer)</label>
+    <div id="payHowRow" hidden>
+      <h3 class="set-sec">How did they pay?</h3>
+      <div class="split-n pay-how" id="payHow" role="group" aria-label="How they paid">
+        <button type="button" data-how="cash" aria-pressed="false">💵 Cash</button>
+        <button type="button" data-how="link" aria-pressed="false">🔗 Payment link</button>
+      </div>
+      <p class="set-help" id="payHowHelp">Cash goes into Cash in drawer. A payment link doesn't.</p>
+    </div>
     <p class="pin-err" id="payErr" role="alert"></p>
     <div class="confirm-actions">
       <button class="mbtn keep" id="payCancel" type="button">Cancel</button>
@@ -1031,6 +1039,9 @@ const LOGS = true;
 const TABS_LOW = true;
 // "Sliding pills": one orange pill under the tabs that slides over to the tab you tap.
 const PILLS = true;
+// Credit payments: choose how it was paid, Cash or Payment link (no default). Cash goes into the drawer;
+// a payment link doesn't. Stored as {method: "cash" | "link", cash}.
+const PAY_METHOD = true;
 
 // ---- Past days are locked ----
 // Yesterday and earlier are read-only once the day is over; the owner PIN unlocks one day at a time.
@@ -2602,7 +2613,7 @@ function renderCredit() {
     const ul = mk("ul", "co-list num");
     for (const r of recs) {
       const li = mk("li", r.kind === "paid" ? "paid" : "took");
-      const what = r.kind === "paid" ? "Paid" + (r.cash ? " · cash" : "") : (r.items && r.items.length ? r.items.join(", ") : r.note || "On credit");
+      const what = r.kind === "paid" ? "Paid" + (r.method === "link" ? " · payment link" : r.cash ? " · cash" : "") : (r.items && r.items.length ? r.items.join(", ") : r.note || "On credit");
       const w = mk("span", "co-what", what);
       if (r.kind === "took" && r.note && r.items && r.items.length) w.append(mk("span", "co-note", " · " + r.note));
       li.append(mk("span", "co-time", shortDate(r.date)), w, mk("span", "co-amt", (r.kind === "paid" ? "−" : "+") + kd(r.amount)));
@@ -2712,9 +2723,11 @@ async function saveGive() {
   } catch (e) { handleWriteError(e); }
 }
 
+let payMethod = null;
 function openPay(c) {
   if (!canEditNow()) return;
   payFor = c.id;
+  payMethod = null;
   $("payAmt").value = "";
   $("payCash").checked = false;
   $("payErr").textContent = "";
@@ -2729,6 +2742,16 @@ function renderPay() {
   $("payTitle").textContent = crName(payFor) + " pays";
   $("paySub").textContent = "Owes " + kd(owes) + " KD · " + longDate(day);
   $("payFull").textContent = "All " + kd(owes);
+  $("payCashRow").hidden = PAY_METHOD;
+  $("payHowRow").hidden = !PAY_METHOD;
+  if (PAY_METHOD) {
+    for (const b of $("payHow").querySelectorAll("button")) {
+      const on = b.dataset.how === payMethod;
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    }
+    if (PILLS) slidePill($("payHow"), $("payHow").querySelector("button.on"));
+  }
 }
 
 async function savePay(ev) {
@@ -2737,13 +2760,16 @@ async function savePay(ev) {
   const v = r3(parseFloat($("payAmt").value.trim().replace(",", ".")));
   if (!(v > 0)) { $("payErr").textContent = "Type the amount paid, like 5.000."; $("payAmt").focus(); return; }
   if (v > owes) { $("payErr").textContent = crName(payFor) + " only owes " + kd(owes) + " KD."; return; }
+  if (PAY_METHOD && !payMethod) { $("payErr").textContent = "Choose how they paid: Cash or Payment link."; return; }
   if (!canEditNow()) return;
-  const id = payFor, cash = $("payCash").checked;
+  const id = payFor, cash = PAY_METHOD ? payMethod === "cash" : $("payCash").checked;
+  const rec = { customer: id, kind: "paid", date: day, amount: v, cash, at: Date.now(), by: me() };
+  if (PAY_METHOD) rec.method = payMethod;
   try {
-    await db.collection("credit").add({ customer: id, kind: "paid", date: day, amount: v, cash, at: Date.now(), by: me() });
+    await db.collection("credit").add(rec);
     closePay();
     const left = r3(owes - v);
-    logAct("add", "Credit paid back by " + crName(id) + (cash ? " (cash)" : ""), v);
+    logAct("add", "Credit paid back by " + crName(id) + (rec.method === "link" ? " (payment link)" : cash ? " (cash)" : ""), v);
     toast(crName(id) + " paid " + kd(v) + " KD" + (left > 0 ? " · still owes " + kd(left) : " · all paid"));
   } catch (e) { handleWriteError(e); }
 }
@@ -2993,6 +3019,7 @@ $("crAmt").oninput = () => { if (crDraft) renderGive(); };
 $("payForm").onsubmit = savePay;
 $("payCancel").onclick = closePay;
 $("payPop").onclick = ev => { if (ev.target === $("payPop")) closePay(); };
+for (const b of $("payHow").querySelectorAll("button")) b.onclick = () => { payMethod = b.dataset.how; $("payErr").textContent = ""; renderPay(); };
 $("payFull").onclick = () => { $("payAmt").value = kd(balanceOf(payFor)); $("payErr").textContent = ""; };
 
 // After midnight, move a page that was showing "today" on to the new day.

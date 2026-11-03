@@ -316,3 +316,9 @@ html.nozoom button, html.nozoom input, html.nozoom a, html.nozoom label, html.no
 .slide-pill.go { animation: pillstretch .5s ease; }
 @keyframes pillstretch { 0% { scale: 1 1; } 35% { scale: 1.08 .86; } 70% { scale: .98 1.04; } 100% { scale: 1 1; } }
 @media (prefers-reduced-motion: reduce) { .slide-pill { transition: none; } .slide-pill.go { animation: none; } }
+
+/* Credit payment: Cash or Payment link (two equal halves, sliding pill). */
+.pay-how button { flex: 1; min-height: 44px; }
+#payHowRow { display: grid; gap: 8px; }
+#payHowRow[hidden] { display: none; }
+#payForm .set-sec { text-align: left; }

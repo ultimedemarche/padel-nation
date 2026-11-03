@@ -58,6 +58,8 @@ nothing saved (reload starts over). Brought back 2026-11-01 for testing while th
   (`placeTabBar()` moves it; Court tabs keep it at the top).
 - `PILLS`: "sliding pills": the chosen button sits on one orange `.slide-pill` that slides (small stretch) to the
   next one. `slidePill(box, onButton)` is used by the tabs, Split court (2/3/4 players) and the credit customer choice.
+- `PAY_METHOD`: a credit payment asks how it was paid, Cash or Payment link (no default). Saved as
+  {method: "cash" | "link", cash}; cash goes into the drawer, a link doesn't. Older payments only have `cash`.
 New features go through the same path: `const X = TRYING` while testing in ?demo, `true` once approved. Consider Firestore rules making `logs`
 create-only, so nobody can delete them from outside the app).
 
