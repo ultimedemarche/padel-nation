@@ -60,7 +60,7 @@ nothing saved (reload starts over). Brought back 2026-11-01 for testing while th
   next one. `slidePill(box, onButton)` is used by the tabs, Split court (2/3/4 players) and the credit customer choice.
 - `PAY_METHOD`: a credit payment asks how it was paid, Cash or Payment link (no default). Saved as
   {method: "cash" | "link", cash}; cash goes into the drawer and the day's total; a payment link goes straight to the company account, so it
-  only lowers the balance (not in TOTAL, not in the drawer; report bottom line says "by link"). Older payments only have `cash`.
+  only lowers the balance (not in TOTAL, not in the drawer, not mentioned in the report at all). Older payments only have `cash`.
 New features go through the same path: `const X = TRYING` while testing in ?demo, `true` once approved. Consider Firestore rules making `logs`
 create-only, so nobody can delete them from outside the app).
 
